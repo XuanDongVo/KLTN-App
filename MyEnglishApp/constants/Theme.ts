@@ -1,0 +1,27 @@
+export const Theme = {
+  colors: {
+    ink: '#24323D',
+    muted: '#71808C',
+    background: '#F7FAFC',
+    surface: '#FFFFFF',
+    border: '#DDE6EB',
+    green: '#58CC65',
+    greenDark: '#38A74A',
+    yellow: '#FFC83D',
+    yellowDark: '#D99B13',
+    blue: '#4AADE8',
+    blueDark: '#238AC6',
+    coral: '#FF7168',
+    coralDark: '#D94D48',
+    violet: '#8C78E6',
+    cream: '#FFF8E5',
+  },
+  radius: { small: 6, medium: 8 },
+  shadow: {
+    shadowColor: '#24323D',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
+    elevation: 3,
+  },
+} as const;

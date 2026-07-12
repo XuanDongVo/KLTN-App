@@ -21,7 +21,7 @@ public class ServerConfig implements WebMvcConfigurer {
         // 1. Yêu cầu đăng nhập cho MỌI API (trừ login/register)
         registry.addInterceptor(jwtHttpInterceptor)
                 .addPathPatterns("/**")
-                .excludePathPatterns("/auth/**");
+                .excludePathPatterns("/auth/**", "/verify/**");
 
         // 2. Cửa VIP: Yêu cầu quyền Admin cho các API có chữ /admin/
         registry.addInterceptor(adminRoleInterceptor)

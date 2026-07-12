@@ -68,6 +68,46 @@ public class LearnerService {
         );
     }
 
+    public Map<String, Object> getLearningPath(UUID userId) {
+        User user = userRepository.findById(userId).orElseThrow();
+        List<Unit> units = unitRepository.findByIsDeletedFalse();
+        List<Map<String, Object>> pathUnits = new ArrayList<>();
+        boolean previousCompleted = true;
+
+        for (int index = 0; index < units.size(); index++) {
+            Unit unit = units.get(index);
+            Optional<UnitProgress> progress = progressRepository.findByUserIdAndUnitId(userId, unit.getId());
+            boolean completed = progress.isPresent() && Boolean.TRUE.equals(progress.get().getIsCompleted());
+            boolean unlocked = previousCompleted;
+
+            Map<String, Object> lesson = new LinkedHashMap<>();
+            lesson.put("id", unit.getId());
+            lesson.put("title", unit.getTitle());
+            lesson.put("objective", unit.getDescription() == null ? "Practice this topic" : unit.getDescription());
+            lesson.put("orderIndex", index);
+            lesson.put("status", completed ? "COMPLETED" : unlocked ? "UNLOCKED" : "LOCKED");
+            lesson.put("stars", completed ? 3 : 0);
+
+            Map<String, Object> pathUnit = new LinkedHashMap<>();
+            pathUnit.put("id", unit.getId());
+            pathUnit.put("title", unit.getTitle());
+            pathUnit.put("description", unit.getDescription());
+            pathUnit.put("imageUrl", unit.getImageUrl());
+            pathUnit.put("orderIndex", index);
+            pathUnit.put("lessons", List.of(lesson));
+            pathUnits.add(pathUnit);
+            previousCompleted = previousCompleted && completed;
+        }
+
+        return Map.of(
+                "course", Map.of("title", "Fun English Path", "level", "A2 Flyers"),
+                "xp", user.getTotalScore() == null ? 0 : user.getTotalScore(),
+                "streak", 1,
+                "hearts", 5,
+                "units", pathUnits
+        );
+    }
+
     public List<QuestionResponse> getRandomQuestions(Long unitId) {
         List<QuestionBank> entities = questionRepository.findRandom5ByUnitId(unitId);
         List<QuestionResponse> responses = new ArrayList<>();

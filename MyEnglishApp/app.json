@@ -1,0 +1,37 @@
+{
+  "expo": {
+    "name": "Fun English",
+    "slug": "fun-english-kids",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "splash": {
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#ffffff"
+      },
+      "edgeToEdgeEnabled": true,
+      "predictiveBackGestureEnabled": false
+    },
+    "plugins": [
+      "expo-font",
+      "expo-router",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Cho phep Fun English chon anh cho nhiem vu hoc tap.",
+          "cameraPermission": "Cho phep Fun English chup anh cho nhiem vu hoc tap.",
+          "microphonePermission": false
+        }
+      ],
+      "expo-web-browser"
+    ]
+  }
+}
