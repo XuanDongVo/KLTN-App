@@ -9,8 +9,8 @@ type Props = { lesson: Lesson; locked: boolean; completed: boolean; current: boo
 
 export function LessonPathNode({ lesson, locked, completed, current, side, stars, onPress }: Props) {
   const color = locked ? '#B9C5CC' : lesson.color;
-  return <View style={[styles.row, side === 'left' && styles.left, side === 'right' && styles.right]}><Pressable onPress={onPress} disabled={locked} accessibilityRole="button" accessibilityLabel={`${lesson.title}${locked ? ', dang khoa' : ''}`} style={({ pressed }) => [styles.wrapper, pressed && !locked && styles.pressed]}>
-    {current && <Text style={styles.currentLabel}>BAI TIEP THEO</Text>}
+  return <View style={[styles.row, side === 'left' && styles.left, side === 'right' && styles.right]}><Pressable onPress={onPress} disabled={locked} accessibilityRole="button" accessibilityLabel={`${lesson.title}${locked ? ', đang khóa' : ''}`} style={({ pressed }) => [styles.wrapper, pressed && !locked && styles.pressed]}>
+    {current && <Text style={styles.currentLabel}>BÀI TIẾP THEO</Text>}
     <View style={[styles.nodeShadow, { backgroundColor: locked ? '#94A4AD' : darken(color) }]}><View style={[styles.node, { backgroundColor: color }]}><MaterialCommunityIcons name={(locked ? 'lock' : completed ? 'check-bold' : lesson.icon) as never} size={30} color="#FFFFFF" /></View></View>
     <Text style={[styles.title, locked && styles.lockedTitle]} numberOfLines={2}>{lesson.title}</Text>
     {completed && <View style={styles.stars}>{[1, 2, 3].map((star) => <MaterialCommunityIcons key={star} name="star" size={14} color={star <= stars ? Theme.colors.yellow : '#D7E0E5'} />)}</View>}

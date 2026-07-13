@@ -1,5 +1,6 @@
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import * as ImagePicker from 'expo-image-picker';
+import * as Speech from 'expo-speech';
 import React, { useState } from 'react';
 import { ActivityIndicator, Alert, Image, Pressable, StyleSheet, Text, View } from 'react-native';
 
@@ -21,7 +22,7 @@ export function PhotoMissionActivity({ onComplete }: Props) {
     if (source === 'camera') {
       const permission = await ImagePicker.requestCameraPermissionsAsync();
       if (!permission.granted) {
-        Alert.alert('Can quyen may anh', 'Hay cho phep truy cap may anh de lam nhiem vu nay.');
+        Alert.alert('Cần quyền máy ảnh', 'Hãy cho phép truy cập máy ảnh để làm nhiệm vụ này.');
         return;
       }
     }
@@ -42,7 +43,7 @@ export function PhotoMissionActivity({ onComplete }: Props) {
       setCaption(result);
       await recordCaption();
     } catch {
-      Alert.alert('Chua nhan dien duoc', 'Thu lai voi anh ro va du sang hon nhe.');
+      Alert.alert('Chưa nhận diện được', 'Thử lại với ảnh rõ và đủ sáng hơn nhé.');
     } finally {
       setLoading(false);
     }
@@ -53,18 +54,19 @@ export function PhotoMissionActivity({ onComplete }: Props) {
     <View style={styles.captionIcon}><MaterialCommunityIcons name="creation" size={26} color={Theme.colors.violet} /></View>
     <Text style={styles.smallLabel}>AI CAPTION</Text>
     <Text style={styles.caption}>{caption.caption}</Text>
-    <Text style={styles.translation}>Hay doc to cau tieng Anh nay mot lan.</Text>
-    <ActionButton label={onComplete ? 'Da doc xong' : 'Thu anh khac'} icon={onComplete ? 'check' : 'camera-retake'} onPress={() => onComplete ? onComplete() : setCaption(undefined)} />
+    <Text style={styles.translation}>Hãy nghe và đọc to câu tiếng Anh này một lần.</Text>
+    <Pressable style={styles.listenCaption} onPress={() => Speech.speak(caption.caption, { language: 'en-US', rate: 0.75 })}><MaterialCommunityIcons name="volume-high" size={22} color={Theme.colors.blueDark} /><Text style={styles.listenCaptionText}>Nghe caption</Text></Pressable>
+    <ActionButton label={onComplete ? 'Đã đọc xong' : 'Thử ảnh khác'} icon={onComplete ? 'check' : 'camera-retake'} onPress={() => onComplete ? onComplete() : setCaption(undefined)} />
   </View>;
 
   return <View style={styles.container}>
-    {uri ? <Image source={{ uri }} style={styles.preview} /> : <View style={styles.placeholder}><MaterialCommunityIcons name="image-plus" size={54} color={Theme.colors.blue} /><Text style={styles.placeholderText}>Chup hoac chon mot do vat an toan, ro net</Text></View>}
+    {uri ? <Image source={{ uri }} style={styles.preview} /> : <View style={styles.placeholder}><MaterialCommunityIcons name="image-plus" size={54} color={Theme.colors.blue} /><Text style={styles.placeholderText}>Chụp hoặc chọn một đồ vật an toàn, rõ nét</Text></View>}
     <View style={styles.actions}>
-      <Pressable style={styles.sourceButton} onPress={() => choose('camera')}><MaterialCommunityIcons name="camera" size={25} color={Theme.colors.blueDark} /><Text style={styles.sourceLabel}>Chup anh</Text></Pressable>
-      <Pressable style={styles.sourceButton} onPress={() => choose('gallery')}><MaterialCommunityIcons name="image-multiple" size={25} color={Theme.colors.violet} /><Text style={styles.sourceLabel}>Thu vien</Text></Pressable>
+      <Pressable style={styles.sourceButton} onPress={() => choose('camera')}><MaterialCommunityIcons name="camera" size={25} color={Theme.colors.blueDark} /><Text style={styles.sourceLabel}>Chụp ảnh</Text></Pressable>
+      <Pressable style={styles.sourceButton} onPress={() => choose('gallery')}><MaterialCommunityIcons name="image-multiple" size={25} color={Theme.colors.violet} /><Text style={styles.sourceLabel}>Thư viện</Text></Pressable>
     </View>
-    {loading ? <View style={styles.loading}><ActivityIndicator color={Theme.colors.green} /><Text style={styles.loadingText}>Dang kham pha buc anh...</Text></View> : <ActionButton label="Tao caption tieng Anh" icon="creation" disabled={!uri} onPress={discover} />}
-    <Text style={styles.privacy}>Anh chi duoc gui de tao caption va khong duoc chia se cong khai.</Text>
+    {loading ? <View style={styles.loading}><ActivityIndicator color={Theme.colors.green} /><Text style={styles.loadingText}>Đang khám phá bức ảnh...</Text></View> : <ActionButton label="Tạo caption tiếng Anh" icon="creation" disabled={!uri} onPress={discover} />}
+    <Text style={styles.privacy}>Ảnh chỉ được gửi để tạo caption và không được chia sẻ công khai.</Text>
   </View>;
 }
 
@@ -77,4 +79,5 @@ const styles = StyleSheet.create({
   loading: { minHeight: 52, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 9 }, loadingText: { color: Theme.colors.muted, fontWeight: '700' },
   privacy: { color: Theme.colors.muted, fontSize: 11, textAlign: 'center', lineHeight: 16 }, captionIcon: { width: 52, height: 52, borderRadius: 26, backgroundColor: '#F0EDFF', alignItems: 'center', justifyContent: 'center', marginTop: -26 },
   smallLabel: { color: Theme.colors.violet, fontSize: 11, fontWeight: '900' }, caption: { color: Theme.colors.ink, fontSize: 23, lineHeight: 30, fontWeight: '900', textAlign: 'center' }, translation: { color: Theme.colors.muted, marginBottom: 4 },
+  listenCaption: { minHeight: 48, paddingHorizontal: 16, borderRadius: 8, backgroundColor: '#EAF7FE', borderWidth: 1, borderColor: '#B9E3F8', flexDirection: 'row', alignItems: 'center', gap: 8 }, listenCaptionText: { color: Theme.colors.blueDark, fontWeight: '900' },
 });

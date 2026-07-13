@@ -26,12 +26,19 @@
       [
         "expo-image-picker",
         {
-          "photosPermission": "Cho phep Fun English chon anh cho nhiem vu hoc tap.",
-          "cameraPermission": "Cho phep Fun English chup anh cho nhiem vu hoc tap.",
+          "photosPermission": "Cho phép Fun English chọn ảnh cho nhiệm vụ học tập.",
+          "cameraPermission": "Cho phép Fun English chụp ảnh cho nhiệm vụ học tập.",
           "microphonePermission": false
         }
       ],
-      "expo-web-browser"
+      "expo-web-browser",
+      [
+        "expo-audio",
+        {
+          "microphonePermission": "Cho phép Fun English dùng micro để con luyện phát âm tiếng Anh.",
+          "recordAudioAndroid": true
+        }
+      ]
     ]
   }
 }

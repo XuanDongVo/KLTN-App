@@ -18,11 +18,11 @@ export default function LessonCompleteScreen() {
   return <SafeAreaView style={styles.safe}>
     <View style={styles.content}>
       <View style={styles.badge}><MaterialCommunityIcons name="trophy" size={70} color={Theme.colors.yellowDark} /></View>
-      <Text style={styles.eyebrow}>HOAN THANH BAI HOC</Text><Text style={styles.title}>Tuyet voi!</Text><Text style={styles.subtitle}>Moi buoc nho deu giup tieng Anh cua be tot hon.</Text>
+      <Text style={styles.eyebrow}>HOÀN THÀNH BÀI HỌC</Text><Text style={styles.title}>Tuyệt vời!</Text><Text style={styles.subtitle}>Mỗi bước nhỏ đều giúp tiếng Anh của bé tốt hơn.</Text>
       <View style={styles.stars}>{[1, 2, 3].map((star) => <MaterialCommunityIcons key={star} name="star" size={44} color={star <= Number(params.stars) ? Theme.colors.yellow : '#DCE4E8'} />)}</View>
-      <View style={styles.stats}><Stat icon="star-four-points" label="Kinh nghiem" value={`+${params.xp} XP`} color={Theme.colors.yellowDark} /><Stat icon="bullseye-arrow" label="Chinh xac" value={`${accuracy}%`} color={Theme.colors.blueDark} /><Stat icon="check-decagram" label="Tra loi dung" value={`${params.correct}/${params.total}`} color={Theme.colors.greenDark} /></View>
+      <View style={styles.stats}><Stat icon="star-four-points" label="Kinh nghiệm" value={`+${params.xp} XP`} color={Theme.colors.yellowDark} /><Stat icon="bullseye-arrow" label="Chính xác" value={`${accuracy}%`} color={Theme.colors.blueDark} /><Stat icon="check-decagram" label="Trả lời đúng" value={`${params.correct}/${params.total}`} color={Theme.colors.greenDark} /></View>
     </View>
-    <View style={styles.actions}>{Number(params.correct) < Number(params.total) && <ActionButton label="On lai loi sai" icon="brain" outline onPress={() => router.replace('/(tabs)/review')} />}<ActionButton label={nextLesson ? 'Bai hoc tiep theo' : 'Ve learning path'} icon="arrow-right" onPress={() => nextLesson ? router.replace({ pathname: '/(learner)/lesson/[lessonId]', params: { lessonId: nextLesson.id } }) : router.replace('/(tabs)')} /></View>
+    <View style={styles.actions}>{Number(params.correct) < Number(params.total) && <ActionButton label="Ôn lại lỗi sai" icon="brain" outline onPress={() => router.replace('/(tabs)/review')} />}<ActionButton label={nextLesson ? 'Bài học tiếp theo' : 'Về lộ trình học'} icon="arrow-right" onPress={() => nextLesson ? router.replace({ pathname: '/(learner)/lesson/[lessonId]', params: { lessonId: nextLesson.id } }) : router.replace('/(tabs)')} /></View>
   </SafeAreaView>;
 }
 

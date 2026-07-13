@@ -1,7 +1,7 @@
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useRouter } from 'expo-router';
 import React from 'react';
-import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Image, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { LessonPathNode } from '@/components/learner/LessonPathNode';
@@ -17,15 +17,17 @@ export default function HomeScreen() {
   if (!ready) return <View style={styles.loading}><ActivityIndicator size="large" color={Theme.colors.green} /></View>;
 
   return <SafeAreaView style={styles.safe} edges={['top']}>
-    <View style={styles.header}><View><Text style={styles.eyebrow}>FUN ENGLISH</Text><Text style={styles.greeting}>San sang hoc nao!</Text></View><StatusStrip /></View>
+    <View style={styles.header}><View><Text style={styles.eyebrow}>FUN ENGLISH</Text><Text style={styles.greeting}>Sẵn sàng học nào!</Text></View><StatusStrip /></View>
     <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
       <View style={styles.goalBand}>
         <View style={styles.goalIcon}><MaterialCommunityIcons name="target" size={24} color={Theme.colors.blueDark} /></View>
-        <View style={styles.goalCopy}><Text style={styles.goalTitle}>Muc tieu hom nay</Text><View style={styles.progressTrack}><View style={[styles.progressFill, { width: `${Math.min(100, (state.dailyXp / state.dailyGoal) * 100)}%` }]} /></View></View>
+        <View style={styles.goalCopy}><Text style={styles.goalTitle}>Mục tiêu hôm nay</Text><View style={styles.progressTrack}><View style={[styles.progressFill, { width: `${Math.min(100, (state.dailyXp / state.dailyGoal) * 100)}%` }]} /></View></View>
         <Text style={styles.goalValue}>{state.dailyXp}/{state.dailyGoal} XP</Text>
       </View>
       {curriculum.map((unit) => <View key={unit.id} style={styles.unitSection}>
         <View style={[styles.unitHeader, { backgroundColor: unit.color, borderBottomColor: unit.accent }]}>
+          <Image source={unit.coverImage} style={styles.unitImage} resizeMode="cover" />
+          <View style={styles.unitImageShade} />
           <View style={styles.unitNumber}><Text style={[styles.unitNumberText, { color: unit.accent }]}>{unit.id.split('-')[1]}</Text></View>
           <View style={styles.unitCopy}><Text style={styles.unitTitle}>{unit.title}</Text><Text style={styles.unitSubtitle}>{unit.subtitle}</Text></View>
         </View>
@@ -51,7 +53,8 @@ const styles = StyleSheet.create({
   goalIcon: { width: 42, height: 42, borderRadius: 21, backgroundColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center' }, goalCopy: { flex: 1 },
   goalTitle: { color: Theme.colors.ink, fontWeight: '800', fontSize: 14, marginBottom: 7 }, goalValue: { color: Theme.colors.blueDark, fontWeight: '900', fontSize: 13 },
   progressTrack: { height: 9, borderRadius: 5, backgroundColor: '#C9DFEA', overflow: 'hidden' }, progressFill: { height: '100%', borderRadius: 5, backgroundColor: Theme.colors.blue },
-  unitSection: { marginBottom: 18 }, unitHeader: { minHeight: 84, borderRadius: 8, borderBottomWidth: 5, padding: 14, flexDirection: 'row', alignItems: 'center', gap: 12 },
+  unitSection: { marginBottom: 18 }, unitHeader: { minHeight: 110, borderRadius: 8, borderBottomWidth: 5, padding: 14, flexDirection: 'row', alignItems: 'center', gap: 12, overflow: 'hidden' },
+  unitImage: { position: 'absolute', right: 0, top: 0, width: '52%', height: '100%' }, unitImageShade: { position: 'absolute', right: 0, top: 0, width: '58%', height: '100%', backgroundColor: 'rgba(36,50,61,0.28)' },
   unitNumber: { width: 48, height: 48, borderRadius: 24, backgroundColor: 'rgba(255,255,255,0.9)', alignItems: 'center', justifyContent: 'center' }, unitNumberText: { fontSize: 22, fontWeight: '900' }, unitCopy: { flex: 1 },
-  unitTitle: { color: '#FFFFFF', fontSize: 20, fontWeight: '900' }, unitSubtitle: { color: 'rgba(255,255,255,0.92)', fontSize: 13, fontWeight: '600', marginTop: 3 }, path: { paddingTop: 16, paddingBottom: 2 },
+  unitTitle: { color: '#FFFFFF', fontSize: 20, fontWeight: '900' }, unitSubtitle: { color: '#FFFFFF', fontSize: 13, lineHeight: 18, fontWeight: '700', marginTop: 3, maxWidth: 250 }, path: { paddingTop: 16, paddingBottom: 2 },
 });

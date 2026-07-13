@@ -11,8 +11,8 @@ export default function TabLayout() {
     tabBarLabelStyle: { fontSize: 11, fontWeight: '800' },
     tabBarStyle: { height: 68, paddingTop: 7, paddingBottom: 9, borderTopColor: Theme.colors.border, backgroundColor: '#FFFFFF' },
   }}>
-    <Tabs.Screen name="index" options={{ title: 'Hoc', tabBarIcon: ({ color, size }) => <MaterialCommunityIcons name="map-marker-path" color={color} size={size} /> }} />
-    <Tabs.Screen name="review" options={{ title: 'On tap', tabBarIcon: ({ color, size }) => <MaterialCommunityIcons name="brain" color={color} size={size} /> }} />
-    <Tabs.Screen name="profile" options={{ title: 'Cua be', tabBarIcon: ({ color, size }) => <MaterialCommunityIcons name="account-circle" color={color} size={size} /> }} />
+    <Tabs.Screen name="index" options={{ title: 'Học', tabBarIcon: ({ color, size }) => <MaterialCommunityIcons name="map-marker-path" color={color} size={size} /> }} />
+    <Tabs.Screen name="review" options={{ title: 'Ôn tập', tabBarIcon: ({ color, size }) => <MaterialCommunityIcons name="brain" color={color} size={size} /> }} />
+    <Tabs.Screen name="profile" options={{ title: 'Của bé', tabBarIcon: ({ color, size }) => <MaterialCommunityIcons name="account-circle" color={color} size={size} /> }} />
   </Tabs>;
 }

@@ -14,12 +14,12 @@ export default function WelcomeScreen() {
     AsyncStorage.getItem('userToken').then((token) => token && router.replace('/(tabs)'));
   }, [router]);
 
-  return <ImageBackground source={{ uri: 'https://images.unsplash.com/photo-1503454537195-1dcabb73ffb9?auto=format&fit=crop&w=1200&q=85' }} style={styles.background} imageStyle={styles.image}>
+  return <ImageBackground source={require('@/assets/images/lessons/greetings.png')} style={styles.background} imageStyle={styles.image}>
     <View style={styles.overlay} />
     <SafeAreaView style={styles.safe}>
       <View style={styles.brand}><View style={styles.logo}><MaterialCommunityIcons name="book-open-page-variant" size={28} color="#FFFFFF" /></View><Text style={styles.brandText}>FUN ENGLISH</Text></View>
-      <View style={styles.copy}><Text style={styles.title}>Fun English</Text><Text style={styles.subtitle}>Moi ngay mot bai hoc ngan, vui va vua suc cho be.</Text></View>
-      <View style={styles.actions}><ActionButton label="Hoc thu ngay" icon="play" onPress={() => router.replace('/(tabs)')} /><Pressable onPress={() => router.push('/(auth)/login')} style={styles.login}><Text style={styles.loginText}>Da co tai khoan? Dang nhap</Text></Pressable></View>
+      <View style={styles.copy}><Text style={styles.title}>Fun English</Text><Text style={styles.subtitle}>Mỗi ngày một bài học ngắn, vui và vừa sức cho bé.</Text></View>
+      <View style={styles.actions}><ActionButton label="Học thử ngay" icon="play" onPress={() => router.replace('/(tabs)')} /><Pressable onPress={() => router.push('/(auth)/login')} style={styles.login}><Text style={styles.loginText}>Đã có tài khoản? Đăng nhập</Text></Pressable></View>
     </SafeAreaView>
   </ImageBackground>;
 }

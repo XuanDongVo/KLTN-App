@@ -10,7 +10,7 @@ export type ActivityType =
   | 'SPEAK_REPEAT'
   | 'IMAGE_CAPTION';
 
-export type Choice = { id: string; label: string; imageUrl?: string };
+export type Choice = { id: string; label: string; imageUrl?: string; image?: ImageSourcePropType };
 export type MatchPair = { left: string; right: string };
 
 export type Activity = {
@@ -19,7 +19,9 @@ export type Activity = {
   prompt: string;
   instruction?: string;
   imageUrl?: string;
+  image?: ImageSourcePropType;
   audioUrl?: string;
+  speechText?: string;
   choices?: Choice[];
   answer?: string | boolean;
   sentence?: string;
@@ -47,6 +49,7 @@ export type LearningUnit = {
   subtitle: string;
   color: string;
   accent: string;
+  coverImage: ImageSourcePropType;
   lessons: Lesson[];
 };
 
@@ -78,3 +81,4 @@ export type CaptionResult = {
   objects?: string[];
   source: 'mock' | 'backend';
 };
+import type { ImageSourcePropType } from 'react-native';

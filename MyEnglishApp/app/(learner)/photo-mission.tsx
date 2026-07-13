@@ -9,7 +9,7 @@ import { Theme } from '@/constants/Theme';
 
 export default function PhotoMissionScreen() {
   const router = useRouter();
-  return <SafeAreaView style={styles.safe}><View style={styles.header}><Pressable onPress={() => router.back()} style={styles.back}><MaterialCommunityIcons name="arrow-left" size={25} color={Theme.colors.ink} /></Pressable><View><Text style={styles.eyebrow}>SPECIAL MISSION</Text><Text style={styles.title}>Photo Mission</Text></View></View><ScrollView contentContainerStyle={styles.content}><View style={styles.intro}><MaterialCommunityIcons name="creation" size={25} color={Theme.colors.violet} /><Text style={styles.introText}>Bien mot buc anh thanh cau tieng Anh de be doc va hoc tu moi.</Text></View><PhotoMissionActivity /></ScrollView></SafeAreaView>;
+  return <SafeAreaView style={styles.safe}><View style={styles.header}><Pressable onPress={() => router.back()} style={styles.back}><MaterialCommunityIcons name="arrow-left" size={25} color={Theme.colors.ink} /></Pressable><View><Text style={styles.eyebrow}>SPECIAL MISSION</Text><Text style={styles.title}>Photo Mission</Text></View></View><ScrollView contentContainerStyle={styles.content}><View style={styles.intro}><MaterialCommunityIcons name="creation" size={25} color={Theme.colors.violet} /><Text style={styles.introText}>Biến một bức ảnh thành câu tiếng Anh để bé đọc và học từ mới.</Text></View><PhotoMissionActivity /></ScrollView></SafeAreaView>;
 }
 
 const styles = StyleSheet.create({
