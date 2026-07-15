@@ -1,6 +1,8 @@
 package com.example.englishapp_server.entity.security;
 
+import com.example.englishapp_server.common.enums.AccountStatus;
 import com.example.englishapp_server.common.enums.UserRole;
+import com.example.englishapp_server.repository.jpa.UserRepository;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -19,9 +21,11 @@ import java.util.UUID;
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final JwtConfig jwtConfig;
+    private final UserRepository userRepository;
 
-    public JwtAuthenticationFilter(JwtConfig jwtConfig) {
+    public JwtAuthenticationFilter(JwtConfig jwtConfig, UserRepository userRepository) {
         this.jwtConfig = jwtConfig;
+        this.userRepository = userRepository;
     }
 
     @Override
@@ -38,6 +42,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     return;
                 }
                 UserRole role = UserRole.values()[roleOrdinal];
+                var user = userRepository.findById(userId).orElse(null);
+                if (user == null || user.getAccountStatus() == AccountStatus.LOCKED || user.getRole() != role) {
+                    filterChain.doFilter(request, response);
+                    return;
+                }
 
                 request.setAttribute("userId", userId.toString());
                 request.setAttribute("userRole", roleOrdinal);

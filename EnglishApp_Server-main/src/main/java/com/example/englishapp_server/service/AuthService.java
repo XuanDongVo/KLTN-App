@@ -1,5 +1,6 @@
 package com.example.englishapp_server.service;
 
+import com.example.englishapp_server.common.enums.AccountStatus;
 import com.example.englishapp_server.common.enums.UserRole;
 import com.example.englishapp_server.dto.request.auth.LoginRequest;
 import com.example.englishapp_server.dto.request.auth.RegisterRequest;
@@ -14,6 +15,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
+
 @Service
 @Slf4j
 public class AuthService {
@@ -26,6 +29,7 @@ public class AuthService {
         this.jwtConfig = jwtConfig;
     }
 
+    @Transactional
     public AuthResponse login(LoginRequest input) {
         User targetUser = userRepository.findByEmail(input.email());
         if (targetUser == null) {
@@ -35,6 +39,11 @@ public class AuthService {
         if (!isPasswordMatch) {
             return new AuthResponse(false, "Wrong password or email", null);
         }
+        if (targetUser.getAccountStatus() == AccountStatus.LOCKED) {
+            return new AuthResponse(false, "Tài khoản đã bị khóa", null);
+        }
+        targetUser.setLastLoginAt(LocalDateTime.now());
+        userRepository.save(targetUser);
         //FIXME: Add int value for UserRole
         String jwtToken = jwtConfig.generateToken(targetUser.getId(), targetUser.getRole().ordinal());
         AuthDto dto = getAuthDto(targetUser, jwtToken);
@@ -51,6 +60,7 @@ public class AuthService {
         newUser.setEmail(input.email());
         newUser.setUsername(input.username());
         newUser.setPasswordHash(PasswordEncryption.hashPassword(input.password()));
+        newUser.setAccountStatus(AccountStatus.ACTIVE);
         this.userRepository.save(newUser);
         return new AuthResponse(true, "Register success!", null);
     }

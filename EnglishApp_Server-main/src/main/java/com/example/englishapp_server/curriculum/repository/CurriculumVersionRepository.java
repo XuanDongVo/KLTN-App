@@ -11,6 +11,7 @@ import java.util.Optional;
 public interface CurriculumVersionRepository extends JpaRepository<CurriculumVersion, Long> {
     Optional<CurriculumVersion> findByVersionCode(String versionCode);
     List<CurriculumVersion> findByLevelCodeAndLifecycleStatus(LevelCode levelCode, LifecycleStatus status);
+    List<CurriculumVersion> findByLevelCodeOrderByImportedAtDesc(LevelCode levelCode);
     Optional<CurriculumVersion> findFirstByLevelCodeAndLifecycleStatusOrderByImportedAtDesc(
             LevelCode levelCode, LifecycleStatus status);
 }

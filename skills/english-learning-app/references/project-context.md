@@ -34,6 +34,7 @@ Updated: 2026-07-15
 - Activity player: `components/learner/BackendLessonScreen.tsx`.
 - Activity renderers: `components/activities/BackendActivityRenderer.tsx` plus audio/speaking components.
 - API adapter: `services/curriculumService.ts`.
+- Admin CMS: `app/admin/`, `components/admin/AdminCurriculumWorkspace.tsx`, and `services/adminCurriculumService.ts`.
 - Backend types: `types/backendCurriculum.ts`.
 - Local `LearningContext` is limited to device concerns such as daily XP and Photo Mission count.
 - There is no frontend curriculum seed or curriculum feature flag.
@@ -47,6 +48,8 @@ Updated: 2026-07-15
 - Migration: `src/main/resources/db/migration/V1__create_learning_core.sql`.
 - Bundled packages: `starters-v4`, `movers-v1`, and `flyers-v1` under `src/main/resources/curriculum/`.
 - Fresh-database bootstrap: `CurriculumBootstrapService` imports all three once; a non-empty curriculum database is skipped.
+- Curriculum CMS backend: `curriculum/admin/`; only `ADMIN` can access `/api/v1/admin/**`.
+- Admin user/media/audit backend: `admin/`; Flyway V2 owns its schema additions.
 - Static media: `src/main/resources/static/curriculum/starters-2026.2/`.
 - Local services: `compose.local.yml`.
 
@@ -61,8 +64,9 @@ Updated: 2026-07-15
 
 ## Current Caveats
 
-- Local MySQL was reset on 2026-07-15 and now contains only the three current curriculum versions; old users and progress were removed.
-- Spring was left running on port 8080 after verifying that the second startup skips curriculum import.
+- Local MySQL publishes `STARTERS_2026.5`, `MOVERS_2026.1`, and `FLYERS_2026.1`; `STARTERS_2026.4` is archived.
+- Local MySQL currently has one admin, one learner, one session, one progress row, one registered Cloudinary asset, and admin audit history.
+- Port 8080 is not assumed to be running; start Spring explicitly before Expo QA.
 - Physical Expo Go microphone and camera QA is still required.
 - Curriculum has automated structural/source checks but still needs a human English-teacher review.
-- Legacy admin Unit/QuestionBank screens remain and should only be removed after the new curriculum admin flow is complete.
+- Legacy admin Unit/QuestionBank screens and endpoints were removed after the new Curriculum CMS passed targeted tests.

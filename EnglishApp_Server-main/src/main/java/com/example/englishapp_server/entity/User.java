@@ -1,8 +1,10 @@
 package com.example.englishapp_server.entity;
 import com.example.englishapp_server.common.enums.UserRole;
+import com.example.englishapp_server.common.enums.AccountStatus;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
@@ -34,4 +36,21 @@ public class User {
 
     @Column(name = "verified", nullable = false)
     private boolean isVerified;
+
+    @Builder.Default
+    @Enumerated(EnumType.STRING)
+    @Column(name = "account_status", nullable = false, length = 20)
+    private AccountStatus accountStatus = AccountStatus.ACTIVE;
+
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private LocalDateTime createdAt;
+
+    @Column(name = "last_login_at")
+    private LocalDateTime lastLoginAt;
+
+    @PrePersist
+    void initializeAccountMetadata() {
+        if (accountStatus == null) accountStatus = AccountStatus.ACTIVE;
+        if (createdAt == null) createdAt = LocalDateTime.now();
+    }
 }

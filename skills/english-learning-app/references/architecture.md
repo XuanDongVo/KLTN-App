@@ -49,13 +49,13 @@ Learner:
 
 Admin:
 
-- `GET/POST/PUT /admin/courses`
-- `GET/POST/PUT /admin/units`
-- `GET/POST/PUT /admin/lessons`
-- `GET/POST/PUT /admin/activities`
-- `GET /admin/image-caption/jobs`
-- `POST /admin/import/curriculum-draft`
-- `POST /admin/lessons/{lessonId}/publish`
+- `GET /api/v1/admin/curriculum/levels`
+- `GET /api/v1/admin/curriculum/versions/{versionId}`
+- `POST /api/v1/admin/curriculum/levels/{levelCode}/drafts`
+- Draft-only CRUD/reorder for units, lessons, and activities under `/api/v1/admin/curriculum`.
+- `POST /api/v1/admin/curriculum/versions/{versionId}/validate`
+- `GET /api/v1/admin/curriculum/versions/{versionId}/preview`
+- `POST /api/v1/admin/curriculum/versions/{versionId}/publish`
 
 AI integration boundary:
 
@@ -174,7 +174,7 @@ MVP can return a mocked caption from backend while the AI model service is being
 
 - The learner path now uses only the versioned `/api/v1` curriculum/session APIs.
 - The frontend seed and cutover feature flag have been removed.
-- Keep old admin screens until new curriculum administration is ready.
+- The old Unit/QuestionBank admin screens are retired; curriculum administration uses draft versions in `curriculum/admin/`.
 - Add future levels as immutable backend-imported packages. Starters, Movers and Flyers packages now exist.
 - Build Image Caption with a mock adapter first: camera/gallery -> upload -> mock caption -> follow-up activity.
 

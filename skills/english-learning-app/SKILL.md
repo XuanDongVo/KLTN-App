@@ -13,6 +13,7 @@ Read in this order before planning or changing code:
 2. `references/implementation-plan.md` - approved execution order, gates, and verification requirements.
 3. `references/project-context.md` - current repository shape and known risks.
 4. `references/implementation-status.md` - existing reusable behavior and latest verification.
+5. `references/curriculum-cms.md` - admin workflow, API map, permissions, and continuation notes.
 
 Read only when relevant:
 
@@ -24,9 +25,9 @@ Read only when relevant:
 
 - Build one backend-owned curriculum platform for `PRE_A1_STARTERS`, `A1_MOVERS`, and `A2_FLYERS`.
 - Deliver levels sequentially: Starters first, then Movers, then Flyers.
-- Target 10 lessons per level; each lesson contains 8-15 ordered activities grouped by stage.
+- Current package size is 25 lessons per level; each lesson contains 8 ordered activities grouped by stage.
 - Keep the mobile app free of canonical curriculum and answer keys. It renders DTOs returned by Spring.
-- Build only the core learner loop and admin curriculum import/publish flow now.
+- The core learner loop and draft-based Curriculum CMS are active.
 - Freeze parent/teacher dashboards, placement, notifications, offline sync, advanced analytics, daily quests, AI-assisted authoring, pronunciation scoring, and new Image Caption work until the core loop is accepted.
 
 ## Working Rules
@@ -44,11 +45,11 @@ Read only when relevant:
 
 ## Immediate Next Slice
 
-The backend-only YLE path now includes `STARTERS_2026.4`, `MOVERS_2026.1`, and `FLYERS_2026.1`. Each level has 5 units, 25 lessons, and 200 activities. Continue from here:
+The live YLE path includes `STARTERS_2026.5`, `MOVERS_2026.1`, and `FLYERS_2026.1`. Each level has 5 units, 25 lessons, and 200 activities. Continue from here:
 
-1. Read `references/implementation-status.md` and the Starters source audit it links.
-2. Retry the local Mongo service and gated reset described in the status file.
-3. Run Spring on port 8080 and Expo on the LAN; confirm `EXPO_PUBLIC_API_URL` uses the computer's LAN IP.
-4. Complete the 10-lesson path on a physical device, including images, wrong answers, hearts, microphone record/replay, completion, and sequential unlock.
-5. Record teacher/content corrections as a new immutable curriculum version.
-6. Add resume/idempotency hardening, then proceed to admin ZIP import. Do not begin Movers before the Starters acceptance gates pass.
+1. Read `references/implementation-status.md` and `references/curriculum-cms.md`.
+2. Sign in again as the existing admin so the JWT and `lastLoginAt` refresh.
+3. Keep Spring on port 8080 and run Expo on the LAN; `EXPO_PUBLIC_API_URL` already targets the computer's LAN IP.
+4. QA dashboard, learner detail/lock, Media Library, picker upload, and Curriculum CMS on a physical Android device.
+5. Complete the learner path QA for images, wrong answers, hearts, microphone record/replay, completion, and sequential unlock.
+6. Record teacher/content corrections in a new draft version. Keep published versions immutable and never delete referenced Cloudinary assets blindly.
