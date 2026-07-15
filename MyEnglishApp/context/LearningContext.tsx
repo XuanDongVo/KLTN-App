@@ -1,10 +1,9 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 
-import { allLessons } from '@/data/curriculum';
 import { LearnerState, LessonResult } from '@/types/learning';
 
-const STORAGE_KEY = '@fun-english/learner-state-v1';
+const STORAGE_KEY = '@fun-english/learner-state-v2';
 const initialState: LearnerState = {
   xp: 0,
   streak: 1,
@@ -24,7 +23,6 @@ type LearningContextValue = {
   resolveMistake: (activityId: string) => Promise<void>;
   recordCaption: () => Promise<void>;
   resetProgress: () => Promise<void>;
-  isLessonUnlocked: (lessonId: string) => boolean;
 };
 
 const LearningContext = createContext<LearningContextValue | null>(null);
@@ -71,14 +69,9 @@ export function LearningProvider({ children }: React.PropsWithChildren) {
 
   const resetProgress = useCallback(async () => persist(initialState), [persist]);
 
-  const isLessonUnlocked = useCallback((lessonId: string) => {
-    const index = allLessons.findIndex((lesson) => lesson.id === lessonId);
-    return index <= 0 || state.completedLessonIds.includes(allLessons[index - 1].id);
-  }, [state.completedLessonIds]);
-
   const value = useMemo(
-    () => ({ state, ready, completeLesson, resolveMistake, recordCaption, resetProgress, isLessonUnlocked }),
-    [state, ready, completeLesson, resolveMistake, recordCaption, resetProgress, isLessonUnlocked],
+    () => ({ state, ready, completeLesson, resolveMistake, recordCaption, resetProgress }),
+    [state, ready, completeLesson, resolveMistake, recordCaption, resetProgress],
   );
   return <LearningContext.Provider value={value}>{children}</LearningContext.Provider>;
 }

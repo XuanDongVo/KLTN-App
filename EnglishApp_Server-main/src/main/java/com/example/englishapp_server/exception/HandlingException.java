@@ -22,4 +22,19 @@ public class HandlingException {
         ServerResponse<Object> errorResponse = ServerResponse.error(400, ex.getMessage());
         return ResponseEntity.status(400).body(errorResponse);
     }
+
+    @ExceptionHandler(java.util.NoSuchElementException.class)
+    public ResponseEntity<ServerResponse<Object>> handleNotFound(java.util.NoSuchElementException ex) {
+        return ResponseEntity.status(404).body(ServerResponse.error(404, ex.getMessage()));
+    }
+
+    @ExceptionHandler(IllegalStateException.class)
+    public ResponseEntity<ServerResponse<Object>> handleConflict(IllegalStateException ex) {
+        return ResponseEntity.status(409).body(ServerResponse.error(409, ex.getMessage()));
+    }
+
+    @ExceptionHandler(SecurityException.class)
+    public ResponseEntity<ServerResponse<Object>> handleForbidden(SecurityException ex) {
+        return ResponseEntity.status(403).body(ServerResponse.error(403, ex.getMessage()));
+    }
 }

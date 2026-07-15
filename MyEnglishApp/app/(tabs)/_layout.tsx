@@ -14,5 +14,6 @@ export default function TabLayout() {
     <Tabs.Screen name="index" options={{ title: 'Học', tabBarIcon: ({ color, size }) => <MaterialCommunityIcons name="map-marker-path" color={color} size={size} /> }} />
     <Tabs.Screen name="review" options={{ title: 'Ôn tập', tabBarIcon: ({ color, size }) => <MaterialCommunityIcons name="brain" color={color} size={size} /> }} />
     <Tabs.Screen name="profile" options={{ title: 'Của bé', tabBarIcon: ({ color, size }) => <MaterialCommunityIcons name="account-circle" color={color} size={size} /> }} />
+    <Tabs.Screen name="settings" options={{ title: 'Cài đặt', tabBarIcon: ({ color, size }) => <MaterialCommunityIcons name="cog" color={color} size={size} /> }} />
   </Tabs>;
 }

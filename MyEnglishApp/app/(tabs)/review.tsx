@@ -1,32 +1,74 @@
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
-import React, { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useFocusEffect, useRouter } from 'expo-router';
+import React, { useCallback, useState } from 'react';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Theme } from '@/constants/Theme';
-import { useLearning } from '@/context/LearningContext';
-import { findActivity } from '@/data/curriculum';
+import { curriculumService } from '@/services/curriculumService';
+import type { BackendLessonSummary, BackendLevelCode } from '@/types/backendCurriculum';
 
 export default function ReviewScreen() {
-  const { state, resolveMistake } = useLearning();
-  const [revealed, setRevealed] = useState<string>();
-  const mistakes = state.mistakeActivityIds.map(findActivity).filter(Boolean);
+  const router = useRouter();
+  const [lessons, setLessons] = useState<BackendLessonSummary[]>([]);
+  const [level, setLevel] = useState<BackendLevelCode>('PRE_A1_STARTERS');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  useFocusEffect(useCallback(() => {
+    setLoading(true);
+    curriculumService.getSelectedPath()
+      .then((path) => {
+        setLevel(path.level);
+        setLessons(path.units.flatMap((unit) => unit.lessons).filter((lesson) => lesson.progressStatus !== 'AVAILABLE'));
+        setError('');
+      })
+      .catch((reason) => setError(reason instanceof Error ? reason.message : 'Không tải được danh sách ôn tập.'))
+      .finally(() => setLoading(false));
+  }, []));
 
   return <SafeAreaView style={styles.safe} edges={['top']}>
-    <View style={styles.header}><View><Text style={styles.eyebrow}>SMART REVIEW</Text><Text style={styles.title}>Ôn lại để nhớ lâu</Text></View><View style={styles.count}><MaterialCommunityIcons name="brain" size={22} color={Theme.colors.violet} /><Text style={styles.countText}>{mistakes.length}</Text></View></View>
-    <ScrollView contentContainerStyle={styles.content}>
-      {mistakes.length === 0 ? <View style={styles.empty}><View style={styles.emptyIcon}><MaterialCommunityIcons name="check-decagram" size={58} color={Theme.colors.greenDark} /></View><Text style={styles.emptyTitle}>Hôm nay đã ôn xong!</Text><Text style={styles.emptyText}>Các câu trả lời sai trong bài học sẽ xuất hiện tại đây để bé luyện lại.</Text></View> : mistakes.map((activity) => activity && <Pressable key={activity.id} onPress={() => setRevealed(revealed === activity.id ? undefined : activity.id)} style={styles.reviewCard}>
-        <View style={styles.cardTop}><View style={styles.typeIcon}><MaterialCommunityIcons name="lightbulb-on" size={22} color={Theme.colors.yellowDark} /></View><View style={{ flex: 1 }}><Text style={styles.typeLabel}>{activity.type.replaceAll('_', ' ')}</Text><Text style={styles.prompt}>{activity.sentence ?? activity.prompt}</Text></View><MaterialCommunityIcons name={revealed === activity.id ? 'chevron-up' : 'chevron-down'} size={24} color={Theme.colors.muted} /></View>
-        {revealed === activity.id && <View style={styles.answer}><Text style={styles.answerLabel}>ĐÁP ÁN</Text><Text style={styles.answerText}>{String(activity.answer ?? activity.example ?? 'Luyện lại hoạt động này')}</Text>{activity.explanation && <Text style={styles.explanation}>{activity.explanation}</Text>}<Pressable onPress={() => resolveMistake(activity.id)} style={styles.learnedButton}><MaterialCommunityIcons name="check" size={18} color="#FFFFFF" /><Text style={styles.learnedLabel}>Đã nhớ</Text></Pressable></View>}
+    <View style={styles.header}><Text style={styles.eyebrow}>PRE A1 STARTERS</Text><Text style={styles.title}>Ôn tập</Text></View>
+    {loading ? <View style={styles.center}><ActivityIndicator size="large" color={Theme.colors.green} /></View> : <ScrollView contentContainerStyle={styles.content}>
+      {error ? <Text style={styles.error}>{error}</Text> : null}
+      {!error && lessons.length === 0 ? <View style={styles.empty}>
+        <View style={styles.emptyIcon}><MaterialCommunityIcons name="brain" size={48} color={Theme.colors.violet} /></View>
+        <Text style={styles.emptyTitle}>Chưa có bài cần ôn</Text>
+        <Text style={styles.emptyText}>Hoàn thành bài học đầu tiên để bắt đầu luyện lại.</Text>
+        <Pressable style={styles.primaryButton} onPress={() => router.replace('/(tabs)')}><MaterialCommunityIcons name="map-marker-path" size={20} color="#FFFFFF" /><Text style={styles.primaryText}>Đến lộ trình học</Text></Pressable>
+      </View> : null}
+      {lessons.map((lesson) => <Pressable key={lesson.id} onPress={() => router.push({ pathname: '/(learner)/lesson/[lessonId]', params: { lessonId: String(lesson.id), level } })} style={styles.lesson}>
+        <View style={[styles.lessonIcon, lesson.progressStatus === 'COMPLETED' ? styles.completedIcon : styles.progressIcon]}>
+          <MaterialCommunityIcons name={lesson.progressStatus === 'COMPLETED' ? 'check-bold' : 'book-open-page-variant'} size={24} color={lesson.progressStatus === 'COMPLETED' ? Theme.colors.greenDark : Theme.colors.blueDark} />
+        </View>
+        <View style={styles.lessonCopy}><Text style={styles.lessonTitle}>{lesson.title}</Text><Text style={styles.lessonMeta}>{lesson.activityCount} hoạt động · Điểm cao nhất {lesson.bestScore}%</Text></View>
+        <View style={styles.stars}>{[1, 2, 3].map((star) => <MaterialCommunityIcons key={star} name="star" size={17} color={star <= lesson.stars ? Theme.colors.yellow : '#D9E1E5'} />)}</View>
+        <MaterialCommunityIcons name="chevron-right" size={24} color={Theme.colors.muted} />
       </Pressable>)}
-    </ScrollView>
+    </ScrollView>}
   </SafeAreaView>;
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Theme.colors.background }, header: { minHeight: 82, backgroundColor: '#FFFFFF', borderBottomWidth: 1, borderBottomColor: Theme.colors.border, paddingHorizontal: 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  eyebrow: { color: Theme.colors.violet, fontSize: 11, fontWeight: '900' }, title: { color: Theme.colors.ink, fontSize: 21, fontWeight: '900', marginTop: 2 }, count: { flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: '#F0EDFF', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8 }, countText: { color: Theme.colors.violet, fontWeight: '900' },
-  content: { padding: 16, gap: 12, maxWidth: 680, width: '100%', alignSelf: 'center' }, empty: { alignItems: 'center', paddingHorizontal: 30, paddingTop: 90 }, emptyIcon: { width: 116, height: 116, borderRadius: 58, backgroundColor: '#E6F8E9', alignItems: 'center', justifyContent: 'center' }, emptyTitle: { color: Theme.colors.ink, fontSize: 23, fontWeight: '900', marginTop: 20 }, emptyText: { color: Theme.colors.muted, textAlign: 'center', lineHeight: 21, marginTop: 7, maxWidth: 390 },
-  reviewCard: { borderWidth: 1, borderColor: Theme.colors.border, borderBottomWidth: 3, borderRadius: 8, backgroundColor: '#FFFFFF', overflow: 'hidden' }, cardTop: { minHeight: 78, padding: 13, flexDirection: 'row', alignItems: 'center', gap: 11 }, typeIcon: { width: 42, height: 42, borderRadius: 8, backgroundColor: '#FFF6D9', alignItems: 'center', justifyContent: 'center' }, typeLabel: { color: Theme.colors.muted, fontSize: 10, fontWeight: '900' }, prompt: { color: Theme.colors.ink, fontSize: 16, fontWeight: '800', marginTop: 3 },
-  answer: { padding: 14, backgroundColor: '#F5FAFC', borderTopWidth: 1, borderTopColor: Theme.colors.border }, answerLabel: { color: Theme.colors.greenDark, fontSize: 10, fontWeight: '900' }, answerText: { color: Theme.colors.ink, fontSize: 18, fontWeight: '900', marginTop: 3 }, explanation: { color: Theme.colors.muted, lineHeight: 19, marginTop: 7 }, learnedButton: { alignSelf: 'flex-end', marginTop: 12, flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: Theme.colors.greenDark, paddingHorizontal: 13, paddingVertical: 9, borderRadius: 7 }, learnedLabel: { color: '#FFFFFF', fontWeight: '900' },
+  safe: { flex: 1, backgroundColor: Theme.colors.background },
+  header: { minHeight: 84, paddingHorizontal: 20, justifyContent: 'center', backgroundColor: '#FFFFFF', borderBottomWidth: 1, borderBottomColor: Theme.colors.border },
+  eyebrow: { color: Theme.colors.violet, fontSize: 11, fontWeight: '900' },
+  title: { color: Theme.colors.ink, fontSize: 24, fontWeight: '900', marginTop: 2 },
+  center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  content: { padding: 16, paddingBottom: 42, maxWidth: 680, width: '100%', alignSelf: 'center', gap: 10 },
+  empty: { minHeight: 360, alignItems: 'center', justifyContent: 'center', padding: 24 },
+  emptyIcon: { width: 92, height: 92, borderRadius: 46, alignItems: 'center', justifyContent: 'center', backgroundColor: '#EEEAFE' },
+  emptyTitle: { color: Theme.colors.ink, fontSize: 21, fontWeight: '900', marginTop: 18 },
+  emptyText: { color: Theme.colors.muted, textAlign: 'center', lineHeight: 20, marginTop: 6 },
+  primaryButton: { minHeight: 48, marginTop: 20, paddingHorizontal: 18, borderRadius: 8, flexDirection: 'row', gap: 8, alignItems: 'center', backgroundColor: Theme.colors.greenDark },
+  primaryText: { color: '#FFFFFF', fontWeight: '900' },
+  lesson: { minHeight: 78, padding: 11, flexDirection: 'row', alignItems: 'center', gap: 10, borderWidth: 1, borderBottomWidth: 3, borderColor: Theme.colors.border, borderRadius: 8, backgroundColor: '#FFFFFF' },
+  lessonIcon: { width: 48, height: 48, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
+  completedIcon: { backgroundColor: '#E6F8E9' },
+  progressIcon: { backgroundColor: '#EAF7FE' },
+  lessonCopy: { flex: 1 },
+  lessonTitle: { color: Theme.colors.ink, fontSize: 16, fontWeight: '900' },
+  lessonMeta: { color: Theme.colors.muted, fontSize: 11, marginTop: 4 },
+  stars: { flexDirection: 'row' },
+  error: { color: Theme.colors.coralDark, fontWeight: '700', textAlign: 'center', marginTop: 30 },
 });

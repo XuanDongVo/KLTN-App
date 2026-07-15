@@ -1,5 +1,7 @@
 # Feature Catalog
 
+> Long-term inventory only. Do not implement secondary or extended features during the current rebuild. The active scope is defined in `rebuild-blueprint.md`.
+
 This file lists the full product scope for the children's English learning app. It is intentionally broader than MVP so future sessions can choose what to build without rethinking the whole product.
 
 ## Core Use Cases

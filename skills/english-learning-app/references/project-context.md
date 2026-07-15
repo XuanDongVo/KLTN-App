@@ -1,68 +1,68 @@
 # Project Context
 
+Updated: 2026-07-15
+
 ## Workspace
 
 - Root: `E:\Workspace-Nlu\KLTN-APP`
-- Client: `MyEnglishApp/`
-- Server: `EnglishApp_Server-main/`
-- Curriculum source: `document/Fun for Flyers Student_s Book 4th edition - Flip PDF _ FlipBuilder.pdf`
+- Expo client: `MyEnglishApp/`
+- Spring server: `EnglishApp_Server-main/`
+- Durable handoff: `skills/english-learning-app/`
+- Local reference PDF: `document/Fun for Flyers Student_s Book 4th edition - Flip PDF _ FlipBuilder.pdf`
 
-## Current Client
+## Product Direction
 
-- Expo Router / React Native app.
-- Main learner screens now use the redesigned flow:
-  - `app/(tabs)/index.tsx`: vertical learning path and daily goal.
-  - `app/(learner)/lesson/[lessonId].tsx`: reusable lesson player.
-  - `app/(learner)/lesson-complete.tsx`: rewards and next action.
-  - `app/(tabs)/review.tsx`: mistake review queue.
-  - `app/(tabs)/profile.tsx`: profile, achievements, and Photo Mission entry.
-  - `app/(learner)/photo-mission.tsx`: standalone Image Caption flow.
-- The legacy `app/(learner)/quiz.tsx` remains for compatibility but is no longer the primary learner route.
-- Admin screens:
-  - create units
-  - manage unit contents
-  - manage questions
-- Services:
-  - `services/authService.ts`
-  - `services/learnerService.ts`
-  - `services/unitService.ts`
-  - `services/imageCaptionService.ts`
-- Local-first MVP state and content:
-  - `context/LearningContext.tsx`
-  - `data/curriculum.ts`
-  - `types/learning.ts`
-- Learner media and audio:
-  - `assets/images/lessons/`: local Greetings, Classroom, and Animals illustration sets.
-  - `components/activities/ListenChoiceActivity.tsx`: English TTS listening activity.
-  - `components/activities/SpeakingActivity.tsx`: real microphone recording and replay.
-  - `references/learner-improvement-roadmap.md`: current P0-P3 learner roadmap.
+- Build a child-friendly English learning app with a Duolingo-like path and short interactive activities.
+- Deliver levels in order: Pre A1 Starters, A1 Movers, A2 Flyers.
+- Keep curriculum, answers, progress, rewards, and unlock rules authoritative in Spring/MySQL.
+- Show every lesson in a level, but unlock them sequentially.
+- Keep Image Caption split across systems: Expo captures/uploads, Spring orchestrates, and another AI service produces the caption.
 
-## Current Server
+## Current Source Of Truth
 
-- Spring Boot backend.
-- Main entities:
-  - `Unit`
-  - `UnitImage`
-  - `UnitVocabulary`
-  - `QuestionBank`
-  - `UnitProgress`
-  - `LearnerHistory`
-  - `User`
-- Main controllers:
-  - `/auth`
-  - `/admin`
-  - `/learner`
-  - `/upload`
-  - `/verify`
-- New transition endpoints:
-  - `GET /learner/path`
-  - `POST /learner/image-caption`
+- Product and use cases: `product-plan.md`, `feature-catalog.md`, `use-cases.md`.
+- Architecture: `rebuild-blueprint.md` and `architecture.md`.
+- Execution order: `implementation-plan.md`.
+- Exact current state and run blockers: `implementation-status.md`.
+- Curriculum map and source policy: `curriculum-seed.md` plus each package's `CONTENT_SOURCES.md`.
 
-## Known Risks
+## Client Architecture
 
-- `EnglishApp_Client-main/` appears deleted while `MyEnglishApp/` is untracked. Confirm whether this is an intended rename before committing.
-- Node is not installed on PATH. A temporary official Node 22 portable binary was used to run checks.
-- JDK 21 exists at `C:\Users\voxua\.jdks\ms-21.0.10` but is not on PATH.
-- Backend runtime now requires environment variables for real database/Cloudinary/JWT credentials.
-- Several frontend Vietnamese strings are mojibake and need UTF-8 restoration.
-- Legacy admin Unit screens still contain the older visual style and should be migrated incrementally.
+- Expo Router / React Native.
+- Learner path: `app/(tabs)/index.tsx`.
+- Backend lesson route: `app/(learner)/lesson/[lessonId].tsx`.
+- Activity player: `components/learner/BackendLessonScreen.tsx`.
+- Activity renderers: `components/activities/BackendActivityRenderer.tsx` plus audio/speaking components.
+- API adapter: `services/curriculumService.ts`.
+- Backend types: `types/backendCurriculum.ts`.
+- Local `LearningContext` is limited to device concerns such as daily XP and Photo Mission count.
+- There is no frontend curriculum seed or curriculum feature flag.
+
+## Server Architecture
+
+- Spring Boot 4, Java 21, MySQL, Flyway, and MongoDB for legacy/history features.
+- Versioned curriculum domain: `src/main/java/com/example/englishapp_server/curriculum/`.
+- Learner API: `curriculum/api/LearnerCurriculumController.java`.
+- Importer: `curriculum/importer/`.
+- Migration: `src/main/resources/db/migration/V1__create_learning_core.sql`.
+- Bundled packages: `starters-v4`, `movers-v1`, and `flyers-v1` under `src/main/resources/curriculum/`.
+- Fresh-database bootstrap: `CurriculumBootstrapService` imports all three once; a non-empty curriculum database is skipped.
+- Static media: `src/main/resources/static/curriculum/starters-2026.2/`.
+- Local services: `compose.local.yml`.
+
+## Local Runtime
+
+- Spring: `http://localhost:8080` and `http://<LAN-IP>:8080`.
+- Expo Go must use the same LAN and an `EXPO_PUBLIC_API_URL` that points to the computer's LAN IP, not `localhost`.
+- MySQL Docker container: `englishapp-mysql` on port 3306.
+- Mongo is currently unavailable; see `implementation-status.md`.
+- JDK 21: `C:\Users\voxua\.jdks\ms-21.0.10`.
+- Node is available through `C:\nvm4w\nodejs` in this environment but may not be on every shell's PATH.
+
+## Current Caveats
+
+- Local MySQL was reset on 2026-07-15 and now contains only the three current curriculum versions; old users and progress were removed.
+- Spring was left running on port 8080 after verifying that the second startup skips curriculum import.
+- Physical Expo Go microphone and camera QA is still required.
+- Curriculum has automated structural/source checks but still needs a human English-teacher review.
+- Legacy admin Unit/QuestionBank screens remain and should only be removed after the new curriculum admin flow is complete.

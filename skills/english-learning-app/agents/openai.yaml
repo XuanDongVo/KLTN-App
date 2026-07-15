@@ -1,6 +1,6 @@
 interface:
-  display_name: "English Learning App"
-  short_description: "Continue the KLTN kids English app"
-  default_prompt: "Use $english-learning-app to continue designing and implementing the KLTN Duolingo-like English learning app."
+  display_name: "English App Rebuild"
+  short_description: "Rebuild the KLTN backend-first kids app"
+  default_prompt: "Use $english-learning-app to continue the approved backend-first Starters, Movers, and Flyers rebuild."
 policy:
   allow_implicit_invocation: true

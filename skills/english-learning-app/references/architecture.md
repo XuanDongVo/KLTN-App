@@ -1,5 +1,7 @@
 # Architecture Plan
 
+> Historical design reference. The backend-owned curriculum architecture is now active. For the exact implementation state, read `implementation-status.md` first.
+
 ## Target Domain Model
 
 Recommended new entities:
@@ -35,7 +37,7 @@ Keep or migrate:
 
 Learner:
 
-- `GET /learner/path`
+- `GET /api/v1/learner/path`
 - `GET /learner/lessons/{lessonId}`
 - `POST /learner/lessons/{lessonId}/start`
 - `POST /learner/activities/{activityId}/answer`
@@ -170,10 +172,10 @@ MVP can return a mocked caption from backend while the AI model service is being
 
 ## Implementation Strategy
 
-- First build the new learner UI using existing `/learner/dashboard` and `/learner/units/{unitId}/quiz` if needed.
-- Then introduce new APIs behind the same UI.
-- Avoid a big-bang rewrite; keep old admin screens until new curriculum admin is ready.
-- Add seed data endpoint or migration script after model is stable.
+- The learner path now uses only the versioned `/api/v1` curriculum/session APIs.
+- The frontend seed and cutover feature flag have been removed.
+- Keep old admin screens until new curriculum administration is ready.
+- Add future levels as immutable backend-imported packages. Starters, Movers and Flyers packages now exist.
 - Build Image Caption with a mock adapter first: camera/gallery -> upload -> mock caption -> follow-up activity.
 
 ## Implementation Checkpoint
@@ -184,8 +186,10 @@ Completed on 2026-07-13:
 - Camera/gallery Image Caption activity with backend-first and local-mock fallback.
 - Backend transition path endpoint and synchronous multipart caption endpoint.
 
-Still pending:
+Current checkpoint (2026-07-15):
 
-- Persistent Course/Lesson/Activity/Attempt/Review entities and their admin CRUD APIs.
-- Server-authoritative lesson sessions and answer validation.
-- Async ImageCaptionJob persistence, signed temporary storage, moderation, and retention.
+- Persistent curriculum, lesson, activity, session, attempt, and progress entities are active.
+- Server-authoritative sessions, answer validation, rewards, and sequential unlock are active.
+- Starters, Movers and Flyers each contain 5 units / 25 lessons / 200 activities.
+- Fresh databases bootstrap all three packages once; non-empty databases are not automatically upgraded.
+- Async ImageCaptionJob persistence, signed temporary storage, moderation, and retention remain pending.

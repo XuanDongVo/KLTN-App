@@ -1,125 +1,55 @@
-# Curriculum Seed
+# Curriculum Packages
 
-## Source
+Updated: 2026-07-15
 
-Local PDF:
+## Published Bundled Packages
 
-`document/Fun for Flyers Student_s Book 4th edition - Flip PDF _ FlipBuilder.pdf`
+| Level | Version | Shape | Manifest |
+| --- | --- | --- | --- |
+| Pre A1 Starters | `STARTERS_2026.4` | 5 units, 25 lessons, 200 activities | `curriculum/starters-v4/manifest.json` |
+| A1 Movers | `MOVERS_2026.1` | 5 units, 25 lessons, 200 activities | `curriculum/movers-v1/manifest.json` |
+| A2 Flyers | `FLYERS_2026.1` | 5 units, 25 lessons, 200 activities | `curriculum/flyers-v1/manifest.json` |
 
-The previous environment did not have Poppler, Python, or OCR tools available on PATH, so direct extraction was not completed. Treat the examples below as a starter curriculum structure inspired by the Flyers-level book, not as exact copied textbook content.
+Paths above are relative to `EnglishApp_Server-main/src/main/resources/`.
 
-When tools are available, extract only what is needed:
+Each lesson has 8 activities: bilingual vocabulary, flashcard, listening choice, picture-supported choice, matching, sentence ordering, writing, and speaking.
 
-1. Cover/title page.
-2. Table of contents.
-3. 2-3 representative units.
-4. Vocabulary lists, grammar targets, and exercise patterns.
-5. Avoid storing large copyrighted passages verbatim; store brief summaries and original activity metadata.
+## Source Policy
 
-## Curriculum Shape
+- Vocabulary scope follows the official Cambridge wordlist picture book for the matching level.
+- Activity families follow the official Cambridge paper exam format.
+- The sequence, Vietnamese meanings, prompts, examples and answer keys are original app content.
+- Content is not copied from *Fun for Starters, Movers and Flyers*.
+- Every package has `CONTENT_SOURCES.md`; every activity has `sourceRefs`.
+- A qualified English teacher must still perform the final pedagogical review before production publishing.
 
-Target level: A2 Flyers / upper primary children.
+## Generation
 
-Lesson themes should be concrete and visual:
+Run from the workspace root when Node is available:
 
-- family and friends
-- school and classroom
-- animals
-- food and shopping
-- home and rooms
-- hobbies and sports
-- weather and clothes
-- places in town
-- travel and holidays
-- stories and daily routines
-
-## Seed Course
-
-Course:
-
-- Title: Fun English Path
-- Level: A2 Flyers
-- Audience: children
-- Goal: build vocabulary, sentence patterns, listening/reading confidence, and short speaking practice.
-
-## Seed Units
-
-Unit 1: Hello, friends
-
-- Objective: greet people, introduce self, identify people.
-- Vocabulary: friend, teacher, classmate, boy, girl, name, age.
-- Grammar: I am..., My name is..., He/She is...
-- Activities:
-  - image choice: choose the person matching the word.
-  - multiple choice: complete "My name is ____."
-  - matching: word to Vietnamese meaning.
-  - speaking placeholder: repeat "Hello, my name is..."
-
-Unit 2: At school
-
-- Objective: name classroom objects and simple actions.
-- Vocabulary: book, pencil, ruler, desk, board, bag, read, write, draw.
-- Grammar: This is a..., These are..., I can...
-- Activities:
-  - image choice: identify classroom object.
-  - fill blank: "This is a ____."
-  - true/false: image caption check.
-  - image caption mission: take a photo of a school object and receive a simple English caption.
-  - listen and choose placeholder: hear word, choose image.
-
-Unit 3: Animals around us
-
-- Objective: describe animals with simple adjectives.
-- Vocabulary: cat, dog, bird, horse, monkey, big, small, fast, slow.
-- Grammar: It is..., It can..., has/have.
-- Activities:
-  - matching: animal to ability.
-  - multiple choice: "A bird can ____."
-  - image choice: choose animal from picture.
-  - review: mixed vocabulary.
-
-## Data Template
-
-Use this JSON shape for seed import:
-
-```json
-{
-  "course": "Fun English Path",
-  "unit": "At school",
-  "lesson": "Classroom words",
-  "objective": "Learner can name classroom objects.",
-  "vocabulary": [
-    {
-      "word": "book",
-      "meaning": "sach",
-      "partOfSpeech": "noun",
-      "example": "This is a book."
-    }
-  ],
-  "activities": [
-    {
-      "type": "IMAGE_CHOICE",
-      "prompt": "Choose the book.",
-      "data": {
-        "answer": "book",
-        "distractors": ["bag", "ruler", "desk"]
-      }
-    },
-    {
-      "type": "IMAGE_CAPTION",
-      "prompt": "Take or upload a photo of a classroom object.",
-      "data": {
-        "theme": "classroom object",
-        "followUp": "FILL_IN_BLANK",
-        "mockCaption": "This is a book."
-      }
-    }
-  ]
-}
+```powershell
+node EnglishApp_Server-main/scripts/build-curriculum-packages.mjs
 ```
 
-## Extraction Todo
+The script is the maintainable source for all 75 lessons. Do not hand-edit a manifest that has already been imported; create a new immutable `versionCode` instead.
 
-- Install or expose `pdftotext`, `pdfinfo`, and `pdftoppm`, or use an OCR tool if pages are images.
-- Save a short extracted outline to this file.
-- Create `seed-curriculum.json` only after verifying the exact unit names and topics from the PDF.
+## One-Time Bootstrap
+
+- Owner: `CurriculumBootstrapService` and `CurriculumBootstrapRunner`.
+- Configuration: `app.curriculum.bootstrap.*` in `application.properties`.
+- If `curriculum_versions` is empty, all three bundled packages are imported in one transaction.
+- If any curriculum version already exists, bootstrap skips everything. This prevents duplicate imports on every restart.
+- Existing installations need an explicit reset or an administrator-driven package import to adopt a newer package; bootstrap deliberately does not upgrade a non-empty database.
+
+## Unlock Rules
+
+1. Starters lesson 1 is initially open.
+2. Completing a lesson opens the next lesson across unit boundaries.
+3. Movers opens only after all 25 active Starters lessons are complete.
+4. Flyers opens only after all 25 active Movers lessons are complete.
+5. Locked levels and lessons remain visible for curriculum preview.
+6. Spring enforces every lock when a lesson session starts; the client is not trusted.
+
+## Legacy Cleanup
+
+The old `starters-v1`, `starters-v2`, `starters-v3`, and `build-starters-v3.mjs` artifacts were deleted after the local database reset. Do not restore or reference them.

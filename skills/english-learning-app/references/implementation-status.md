@@ -1,61 +1,70 @@
 # Implementation Status
 
-Updated: 2026-07-13
+Updated: 2026-07-15
 
-## Implemented
+## Current Release Candidate
 
-Client:
+- Bundled curricula: `STARTERS_2026.4`, `MOVERS_2026.1`, `FLYERS_2026.1`.
+- Total bundled content: 15 units, 75 lessons, 600 activities.
+- Every level contains 5 units; every unit contains 5 lessons; every lesson contains 8 activities.
+- Curriculum, answer keys, sessions, progress, XP, hearts, stars and unlock rules are backend-owned.
 
-- New visual system in `constants/Theme.ts` and reusable action/status/path components.
-- Curriculum types and a 3-unit, 5-lesson, 25-activity seed in `data/curriculum.ts`.
-- Persistent local learner state for XP, streak, hearts, daily goal, completion, mistakes, and caption count.
-- Duolingo-like learning path with locked, unlocked, current, completed, and star states.
-- Lesson intro, activity progress, immediate feedback, and lesson completion rewards.
-- Activity renderers for word cards, choices, fill blank, matching, true/false, sentence builder, speaking placeholder, and Image Caption.
-- Review queue and learner profile/achievement views.
-- Photo Mission with camera/gallery, preview, caption loading/result, privacy copy, backend adapter, and local mock fallback.
-- New onboarding/login/register flow with demo access and corrected auth response handling.
-- New admin shell, curriculum dashboard, curriculum tree, and learner preview while retaining legacy Unit CRUD.
-- Expo Image Picker permission config and direct vector icon dependency.
-- Real speaking recorder using `expo-audio`: permission request, recording duration, stop, replay, re-record, and submit.
-- Listening activities and caption playback using `expo-speech`.
-- Three generated local lesson illustration sets in `assets/images/lessons/`.
-- Expanded local curriculum: 3 units, 6 lessons, and 42 activities.
-- Accented Vietnamese copy across the primary learner, review, profile, Photo Mission, welcome, and auth flows.
-- Unit and lesson intro artwork, state-backed heart display, and answer-based XP awards.
+## Backend Completed
 
-Backend:
+- Added `CurriculumBootstrapService`, which imports all bundled packages only when `curriculum_versions` is empty.
+- Replaced the old every-start Starters seed runner with `CurriculumBootstrapRunner`.
+- Bootstrap is transactional and skips a non-empty curriculum database.
+- Added learner-aware `GET /api/v1/learner/levels` summaries with counts, completion and lock state.
+- Added cross-level locking: Starters -> Movers -> Flyers.
+- Rejects attempts to start a locked level, locked lesson or lesson from an archived curriculum version.
+- Kept checksum-idempotent immutable package import and server-only answer keys.
+- Added reproducible curriculum generation in `scripts/build-curriculum-packages.mjs`.
 
-- `GET /learner/path` transition endpoint built from existing Unit and UnitProgress data.
-- `POST /learner/image-caption` multipart endpoint with image type/8 MB checks.
-- External caption model boundary through `AI_CAPTION_SERVICE_URL`; mock response when unset.
-- Database, MongoDB, Cloudinary, JWT, CORS, and caption settings moved to environment-backed properties.
-- `/verify/**` excluded from JWT interception.
-- H2 test profile so Spring context tests do not need a real MySQL database.
+## Client Completed
 
-## Verification
+- Home now loads all three backend levels.
+- Added compact Starters/Movers/Flyers controls with lock and progress state.
+- A locked level can be selected to preview its 5 units and 25 lesson names.
+- Unit accordions still display all lessons while limiting the expanded section to one unit.
+- Lesson navigation carries the selected level, so Movers/Flyers lesson lookup does not fall back to Starters.
+- Review, profile and admin summaries use the most recently selected level.
+- The selected level is persisted in AsyncStorage.
 
-- TypeScript: `tsc --noEmit` passes.
-- Expo config: Android includes `RECORD_AUDIO` and `MODIFY_AUDIO_SETTINGS`.
-- Expo Web: export bundle completes with 1,156 modules and local lesson assets; dev server returns HTTP 200.
-- Backend: `gradlew.bat test` passes with JDK 21 and H2.
-- Dev server: `http://localhost:8083` and Expo Go LAN URL `exp://192.168.1.163:8083` during the implementation session.
-- Visual screenshots were not captured because the in-app browser reported no available browser backend.
-- Physical-device microphone behavior is not yet verified in this environment.
+## Verification Completed
 
-## Important Boundaries
+- Targeted `CurriculumVerticalSliceTests`: passed.
+- Verified bootstrap imports exactly 3 versions, 15 units, 75 lessons and 600 activities.
+- Verified a second bootstrap call skips with no duplicate rows.
+- Verified all levels expose 5 units and 25 lessons.
+- Verified Movers and Flyers lock state and server-side denial.
+- Verified answer keys remain absent from public session DTOs.
+- Verified completing lesson 1 unlocks lesson 2.
+- Backend main and test Java compilation passed under JDK 21.
+- Local MySQL `englishapp` was dropped and recreated on 2026-07-15; all legacy users, progress and curriculum rows were removed.
+- Flyway V1 rebuilt the schema successfully.
+- The first real startup imported `STARTERS_2026.4`, `MOVERS_2026.1`, and `FLYERS_2026.1`.
+- Real MySQL counts: 3 curriculum versions, 15 units, 75 lessons, 600 activities and 0 users.
+- A second real startup logged `Skipped curriculum bootstrap because 3 version(s) already exist`; counts remained unchanged.
+- Spring is running on port 8080 after the verification restart.
+- Legacy Starters v1/v2/v3 source and build artifacts were deleted; only `starters-v4`, `movers-v1`, and `flyers-v1` remain.
 
-- Mobile learning content and progress currently use the local seed so the complete learner loop works without backend data.
-- Existing backend Unit/QuestionBank CRUD remains in place. The new Course/Lesson/Activity persistence migration is the next backend slice.
-- Image Caption does not own the AI model. The server forwards to the configured external service or returns a development mock.
-- Do not expose or restore the credentials previously stored in `application.properties`.
+## Not Verified In This Change
+
+- TypeScript/Expo checks were not run because `node` is not available in the current shell PATH.
+- Physical Android checks for layout, microphone, camera and image rendering remain required.
+- The 75-lesson content still needs a teacher review for vocabulary scope, ambiguity and age progression.
 
 ## Next Work
 
-1. Add Course, Lesson, LearningActivity, lesson progress, attempt, and review persistence.
-2. Make client learner APIs prefer server data and use the local seed only as offline fallback.
-3. Build admin forms for Lesson and type-specific Activity editing/publishing.
-4. Add moderation, signed temporary upload, retention policy, and async caption jobs.
-5. Complete P0 reliability from `learner-improvement-roadmap.md`: recorder cleanup, permission recovery, real hearts/retries, and resumable lesson sessions.
-6. Connect pronunciation scoring through a backend adapter; current speaking verifies and replays a real recording but does not score it.
-7. Verify responsive screenshots and microphone flows on Android, iOS, and web when a browser/device is available.
+1. Register a fresh learner account because the MySQL reset removed all previous users.
+2. Run `npm exec tsc -- --noEmit` and Expo export when Node is available.
+3. QA all three paths and lesson activities on Expo Go Android.
+4. Conduct teacher review, then publish corrections under new immutable version codes.
+5. Add a protected admin package-import workflow for upgrades to non-empty databases.
+
+## Important Boundaries
+
+- Bootstrap is for a fresh clone/database, not for upgrading existing installations.
+- Legacy Unit/QuestionBank APIs do not feed the learner path.
+- Speaking records/replays audio; pronunciation scoring belongs to a separate AI service.
+- Image Caption remains Expo capture/upload -> Spring orchestration -> external AI caption service.

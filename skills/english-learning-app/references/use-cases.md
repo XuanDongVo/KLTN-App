@@ -1,5 +1,7 @@
 # Use Cases
 
+> Historical inventory. For the current implementation, use only the core learner and admin use cases in `rebuild-blueprint.md`. Parent/teacher, offline, placement, notification, and advanced AI use cases are deferred.
+
 ## Roles
 
 - Learner: child using the app to learn English.

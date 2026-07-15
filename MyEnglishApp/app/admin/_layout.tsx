@@ -28,7 +28,7 @@ export default function AdminLayout() {
         const active = link.path === '/admin' ? pathname === link.path : pathname.startsWith(link.path);
         return <Pressable key={link.path} onPress={() => navigate(link.path)} style={[styles.link, active && styles.linkActive]}><MaterialCommunityIcons name={link.icon as never} size={21} color={active ? Theme.colors.green : '#A9B5BD'} /><Text style={[styles.linkText, active && styles.linkTextActive]}>{link.label}</Text></Pressable>;
       })}</View>
-      <Pressable style={styles.logout} onPress={async () => { await AsyncStorage.multiRemove(['userToken', 'userRole']); router.replace('/(auth)/login'); }}><MaterialCommunityIcons name="logout" size={21} color={Theme.colors.coral} /><Text style={styles.logoutText}>Dang xuat</Text></Pressable>
+      <Pressable style={styles.logout} onPress={async () => { await AsyncStorage.multiRemove(['userToken', 'userRole', 'userEmail']); router.replace('/(auth)/login'); }}><MaterialCommunityIcons name="logout" size={21} color={Theme.colors.coral} /><Text style={styles.logoutText}>Đăng xuất</Text></Pressable>
     </View>}
     <View style={styles.body}>{mobile && <View style={styles.mobileHeader}><Pressable onPress={() => setOpen(true)} style={styles.menu}><MaterialCommunityIcons name="menu" size={27} color={Theme.colors.ink} /></Pressable><Text style={styles.mobileTitle}>Fun English Admin</Text></View>}<Slot /></View>
   </View>;

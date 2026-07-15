@@ -1,5 +1,7 @@
 # Product Plan
 
+> Historical reference. The active product scope and delivery order are in `rebuild-blueprint.md` and `implementation-plan.md`. Extended use cases in this file are deferred unless the user explicitly reactivates them.
+
 ## Product Vision
 
 Build a Duolingo-like English learning app for children using the Flyers-level textbook as curriculum inspiration. The app should feel playful, guided, and rewarding, while still giving admins a structured way to create lessons from textbook content.
