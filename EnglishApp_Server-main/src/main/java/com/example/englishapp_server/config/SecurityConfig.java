@@ -20,7 +20,7 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                        .requestMatchers("/auth/**", "/verify/**", "/error", "/curriculum/**").permitAll()
+                        .requestMatchers("/api/auth/**", "/api/verify/**", "/error", "/api/curriculum/**").permitAll()
                         .requestMatchers("/admin/**", "/api/admin/**").hasRole("ADMIN")
                         .anyRequest().authenticated())
                 .exceptionHandling(errors -> errors

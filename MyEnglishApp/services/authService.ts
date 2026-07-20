@@ -1,13 +1,28 @@
 const API_URL = process.env.EXPO_PUBLIC_API_URL?.trim().replace(/\/$/, '') ?? '';
 
-async function post<T>(path: string, payload: object): Promise<T> {
+export type ServerResponse<T> = {
+  code: number;
+  message: string;
+  data: T;
+};
+
+export type AuthDto = {
+  id: string;
+  email: string;
+  username: string;
+  displayName: string;
+  role: string;
+  jwtToken: string;
+};
+
+async function post<T>(path: string, payload: object | string): Promise<ServerResponse<T>> {
   if (!API_URL) throw new Error('Chưa cấu hình địa chỉ máy chủ.');
   let response: Response;
   try {
     response = await fetch(`${API_URL}${path}`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
+      headers: { 'Content-Type': typeof payload === 'string' ? 'text/plain' : 'application/json' },
+      body: typeof payload === 'string' ? payload : JSON.stringify(payload),
     });
   } catch {
     throw new Error('Không thể kết nối máy chủ. Hãy kiểm tra địa chỉ API.');
@@ -17,5 +32,7 @@ async function post<T>(path: string, payload: object): Promise<T> {
   return data;
 }
 
-export const loginApi = (email: string, password: string) => post<any>('/auth/login', { email, password });
-export const registerApi = (username: string, email: string, password: string) => post<any>('/auth/register', { username, email, password });
+export const loginApi = (email: string, password: string) => post<AuthDto>('/api/auth/login', { email, password });
+export const registerApi = (username: string, email: string, password: string) => post<any>('/api/auth/register', { username, email, password });
+export const sendVerifyAccountApi = (email: string) => post<any>('/api/verify/send/account', email);
+export const verifyAccountApi = (email: string, code: string) => post<any>('/api/verify/account', { email, code });

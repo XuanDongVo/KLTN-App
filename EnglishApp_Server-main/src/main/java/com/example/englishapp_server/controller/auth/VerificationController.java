@@ -2,6 +2,7 @@ package com.example.englishapp_server.controller.auth;
 
 import com.example.englishapp_server.common.enums.VerificationType;
 import com.example.englishapp_server.dto.request.auth.VerifyRequest;
+import com.example.englishapp_server.dto.response.ServerResponse;
 import com.example.englishapp_server.dto.response.auth.VerifyResponse;
 import com.example.englishapp_server.service.VerificationService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,7 +13,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/verify")
+@RequestMapping("/api/verify")
 public class VerificationController {
     private final VerificationService verificationService;
 
@@ -22,26 +23,42 @@ public class VerificationController {
     }
 
     @PostMapping("/send/reset-password")
-    public ResponseEntity<VerifyResponse> sendResetPassword(@RequestBody String email) {
+    public ResponseEntity<ServerResponse<Object>> sendResetPassword(@RequestBody String email) {
         VerifyResponse response = verificationService.sendVerificationCode(email, VerificationType.RESET_PASSWORD);
-        return ResponseEntity.ok(response);
+        if (response.result()) {
+            return ResponseEntity.ok(ServerResponse.success(null));
+        } else {
+            return ResponseEntity.badRequest().body(ServerResponse.error(400, response.message()));
+        }
     }
 
     @PostMapping("/send/account")
-    public ResponseEntity<VerifyResponse> sendVerifyAccount(@RequestBody String email) {
+    public ResponseEntity<ServerResponse<Object>> sendVerifyAccount(@RequestBody String email) {
         VerifyResponse response = verificationService.sendVerificationCode(email, VerificationType.VERIFY_USER);
-        return ResponseEntity.ok(response);
+        if (response.result()) {
+            return ResponseEntity.ok(ServerResponse.success(null));
+        } else {
+            return ResponseEntity.badRequest().body(ServerResponse.error(400, response.message()));
+        }
     }
 
     @PostMapping("/reset-password")
-    public ResponseEntity<VerifyResponse> resetPassword(@RequestBody VerifyRequest request) {
+    public ResponseEntity<ServerResponse<Object>> resetPassword(@RequestBody VerifyRequest request) {
         VerifyResponse response = verificationService.verifyResetPassword(request.email(), request.code(), request.newPassword());
-        return ResponseEntity.ok(response);
+        if (response.result()) {
+            return ResponseEntity.ok(ServerResponse.success(null));
+        } else {
+            return ResponseEntity.badRequest().body(ServerResponse.error(400, response.message()));
+        }
     }
 
     @PostMapping("/account")
-    public ResponseEntity<VerifyResponse> verifyAccount(@RequestBody VerifyRequest request) {
+    public ResponseEntity<ServerResponse<Object>> verifyAccount(@RequestBody VerifyRequest request) {
         VerifyResponse response = verificationService.verifyUser(request.email(), request.code());
-        return ResponseEntity.ok(response);
+        if (response.result()) {
+            return ResponseEntity.ok(ServerResponse.success(null));
+        } else {
+            return ResponseEntity.badRequest().body(ServerResponse.error(400, response.message()));
+        }
     }
 }

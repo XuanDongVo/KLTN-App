@@ -25,13 +25,13 @@ public class MailService {
             context.setVariable("otp", otp);
             context.setVariable("expireTime", 5);
 
-            String htmlContent = templateEngine.process("email/otp-verification", context);
+            String htmlContent = templateEngine.process("email/verify-account", context);
 
             sendHtmlMail(to, "EnglishApp - OTP Verification", htmlContent);
 
             log.info("Email sent successfully to {}", to);
         } catch (Exception e) {
-            log.error("CRITICAL: Could not send email to {}. Error: {}", to, e.getMessage());
+            log.error("CRITICAL: Could not send email to {}.", to, e);
         }
     }
 

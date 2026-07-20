@@ -40,15 +40,15 @@ const json = (method: string, body?: unknown): RequestInit => ({
 });
 
 export const adminOperationsService = {
-  getDashboard: () => request<AdminDashboard>('/api/v1/admin/dashboard'),
+  getDashboard: () => request<AdminDashboard>('/api/admin/dashboard'),
   getUsers: (search = '', status?: AccountStatus, page = 0, size = 20) => {
     const params = new URLSearchParams({ search, page: String(page), size: String(size) });
     if (status) params.set('status', status);
-    return request<AdminUserPage>(`/api/v1/admin/users?${params.toString()}`);
+    return request<AdminUserPage>(`/api/admin/users?${params.toString()}`);
   },
-  getUser: (userId: string) => request<AdminUserDetail>(`/api/v1/admin/users/${userId}`),
-  updateUserStatus: (userId: string, status: AccountStatus) => request<AdminUserDetail>(`/api/v1/admin/users/${userId}/status`, json('PUT', { status })),
-  getMedia: () => request<AdminMediaAsset[]>('/api/v1/admin/media'),
-  getMediaSignature: (fileName: string, contentType: string) => request<CloudinarySignature>('/api/v1/admin/media/signature', json('POST', { fileName, contentType })),
-  registerMedia: (body: Omit<AdminMediaAsset, 'id' | 'createdAt'>) => request<AdminMediaAsset>('/api/v1/admin/media', json('POST', body)),
+  getUser: (userId: string) => request<AdminUserDetail>(`/api/admin/users/${userId}`),
+  updateUserStatus: (userId: string, status: AccountStatus) => request<AdminUserDetail>(`/api/admin/users/${userId}/status`, json('PUT', { status })),
+  getMedia: () => request<AdminMediaAsset[]>('/api/admin/media'),
+  getMediaSignature: (fileName: string, contentType: string) => request<CloudinarySignature>('/api/admin/media/signature', json('POST', { fileName, contentType })),
+  registerMedia: (body: Omit<AdminMediaAsset, 'id' | 'createdAt'>) => request<AdminMediaAsset>('/api/admin/media', json('POST', body)),
 };

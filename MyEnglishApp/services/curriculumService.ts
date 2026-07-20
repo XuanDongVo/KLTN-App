@@ -43,21 +43,21 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 }
 
 export const curriculumService = {
-  getLevels: () => request<BackendLevelSummary[]>('/api/v1/learner/levels'),
-  getPath: (level: BackendLevelCode) => request<BackendLearningPath>(`/api/v1/learner/path?level=${level}`),
+  getLevels: () => request<BackendLevelSummary[]>('/api/learner/levels'),
+  getPath: (level: BackendLevelCode) => request<BackendLearningPath>(`/api/learner/path?level=${level}`),
   getSelectedPath: async () => {
     const stored = await AsyncStorage.getItem('@fun-english/selected-level');
     const level: BackendLevelCode = stored === 'A1_MOVERS' || stored === 'A2_FLYERS'
       ? stored
       : 'PRE_A1_STARTERS';
-    return request<BackendLearningPath>(`/api/v1/learner/path?level=${level}`);
+    return request<BackendLearningPath>(`/api/learner/path?level=${level}`);
   },
-  startLesson: (lessonId: number) => request<BackendLessonSession>(`/api/v1/lessons/${lessonId}/sessions`, { method: 'POST' }),
-  getSession: (sessionId: string) => request<BackendLessonSession>(`/api/v1/sessions/${sessionId}`),
+  startLesson: (lessonId: number) => request<BackendLessonSession>(`/api/lessons/${lessonId}/sessions`, { method: 'POST' }),
+  getSession: (sessionId: string) => request<BackendLessonSession>(`/api/sessions/${sessionId}`),
   submitAttempt: (sessionId: string, activityId: number, answer: unknown) =>
-    request<BackendAttemptResult>(`/api/v1/sessions/${sessionId}/attempts`, {
+    request<BackendAttemptResult>(`/api/sessions/${sessionId}/attempts`, {
       method: 'POST',
       body: JSON.stringify({ activityId, answer }),
     }),
-  finishLesson: (sessionId: string) => request<BackendFinishResult>(`/api/v1/sessions/${sessionId}/finish`, { method: 'POST' }),
+  finishLesson: (sessionId: string) => request<BackendFinishResult>(`/api/sessions/${sessionId}/finish`, { method: 'POST' }),
 };

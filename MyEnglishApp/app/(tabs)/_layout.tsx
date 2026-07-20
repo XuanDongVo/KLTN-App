@@ -4,7 +4,7 @@ import { Tabs } from 'expo-router';
 import { Theme } from '@/constants/Theme';
 
 export default function TabLayout() {
-  return <Tabs screenOptions={{
+  return  <Tabs screenOptions={{
     headerShown: false,
     tabBarActiveTintColor: Theme.colors.greenDark,
     tabBarInactiveTintColor: Theme.colors.muted,
@@ -12,6 +12,7 @@ export default function TabLayout() {
     tabBarStyle: { height: 68, paddingTop: 7, paddingBottom: 9, borderTopColor: Theme.colors.border, backgroundColor: '#FFFFFF' },
   }}>
     <Tabs.Screen name="index" options={{ title: 'Học', tabBarIcon: ({ color, size }) => <MaterialCommunityIcons name="map-marker-path" color={color} size={size} /> }} />
+    <Tabs.Screen name="explore" options={{ title: 'Khám phá', tabBarIcon: ({ color, size }) => <MaterialCommunityIcons name="compass" color={color} size={size} /> }} />
     <Tabs.Screen name="review" options={{ title: 'Ôn tập', tabBarIcon: ({ color, size }) => <MaterialCommunityIcons name="brain" color={color} size={size} /> }} />
     <Tabs.Screen name="profile" options={{ title: 'Của bé', tabBarIcon: ({ color, size }) => <MaterialCommunityIcons name="account-circle" color={color} size={size} /> }} />
     <Tabs.Screen name="settings" options={{ title: 'Cài đặt', tabBarIcon: ({ color, size }) => <MaterialCommunityIcons name="cog" color={color} size={size} /> }} />
