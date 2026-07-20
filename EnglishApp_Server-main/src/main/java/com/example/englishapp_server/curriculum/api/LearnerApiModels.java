@@ -91,4 +91,11 @@ public final class LearnerApiModels {
             int xpEarned,
             int heartsRemaining
     ) {}
+
+    public record PhotoMissionSaveRequest(
+            String caption,
+            List<String> vocabularies,
+            String imageUrl,
+            Double confidenceScore
+    ) {}
 }

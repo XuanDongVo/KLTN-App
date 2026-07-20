@@ -30,6 +30,11 @@ public class UploadController {
             @RequestParam("contentType") String contentType //FIXME: Handle content type
     ) {
         JsonObject result = new JsonObject();
+        if (!hasUploadPermission(folderName)) {
+            result.addProperty("result", false);
+            result.addProperty("message", "Forbidden");
+            return ResponseEntity.status(403).header("Content-Type", "application/json").body(result.toString());
+        }
         try {
             Map<String, Object> listParam = service.generateSignature(folderName, fileName, contentType);
             if (listParam != null) {
@@ -58,6 +63,11 @@ public class UploadController {
             @RequestParam("contentType") String contentType //FIXME: Handle content type
     ) {
         JsonObject result = new JsonObject();
+        if (!hasUploadPermission(folderName)) {
+            result.addProperty("result", false);
+            result.addProperty("message", "Forbidden");
+            return ResponseEntity.status(403).header("Content-Type", "application/json").body(result.toString());
+        }
         JsonArray attachments = new JsonArray();
         try {
             for (String name: filenames) {
@@ -80,5 +90,15 @@ public class UploadController {
                     .header("Content-Type", "application/json")
                     .body(result.toString());
         }
+    }
+
+    private boolean hasUploadPermission(String folderName) {
+        if (folderName == null) return false;
+        if (folderName.startsWith("users")) {
+            return true;
+        }
+        org.springframework.security.core.Authentication auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null) return false;
+        return auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
     }
 }

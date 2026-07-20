@@ -1,6 +1,8 @@
 package com.example.englishapp_server.service;
 
 import com.example.englishapp_server.dto.response.learner.ImageCaptionResponse;
+import com.example.englishapp_server.document.PhotoMissionLog;
+import com.example.englishapp_server.repository.mongo.PhotoMissionLogRepository;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.http.client.MultipartBodyBuilder;
@@ -11,6 +13,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.time.LocalDateTime;
 
 @Service
 public class ImageCaptionService {
@@ -18,64 +21,24 @@ public class ImageCaptionService {
 
     private final RestClient restClient;
     private final String captionServiceUrl;
+    private final PhotoMissionLogRepository logRepository;
 
-    public ImageCaptionService(@Value("${ai.caption-service-url:}") String captionServiceUrl) {
+    public ImageCaptionService(@Value("${ai.caption-service-url:}") String captionServiceUrl,
+                               PhotoMissionLogRepository logRepository) {
         this.restClient = RestClient.create();
         this.captionServiceUrl = captionServiceUrl == null ? "" : captionServiceUrl.trim();
+        this.logRepository = logRepository;
     }
 
-    public ImageCaptionResponse createCaption(MultipartFile image) {
-        validateImage(image);
-        String jobId = UUID.randomUUID().toString();
 
-        if (captionServiceUrl.isBlank()) {
-            return new ImageCaptionResponse(
-                    jobId,
-                    "COMPLETED",
-                    "This is a school object.",
-                    0.92,
-                    List.of("school object"),
-                    "SAFE",
-                    "mock"
-            );
-        }
-
-        MultipartBodyBuilder body = new MultipartBodyBuilder();
-        body.part("image", image.getResource())
-                .filename(image.getOriginalFilename() == null ? "photo-mission.jpg" : image.getOriginalFilename())
-                .contentType(MediaType.parseMediaType(image.getContentType()));
-        body.part("language", "en");
-
-        @SuppressWarnings("unchecked")
-        Map<String, Object> result = restClient.post()
-                .uri(captionServiceUrl)
-                .contentType(MediaType.MULTIPART_FORM_DATA)
-                .body(body.build())
-                .retrieve()
-                .body(Map.class);
-
-        if (result == null || !(result.get("caption") instanceof String caption) || caption.isBlank()) {
-            throw new IllegalStateException("Caption service returned an invalid response");
-        }
-
-        Double confidence = result.get("confidence") instanceof Number value ? value.doubleValue() : null;
-        List<String> objects = result.get("objects") instanceof List<?> values
-                ? values.stream().map(String::valueOf).toList()
-                : List.of();
-
-        return new ImageCaptionResponse(jobId, "COMPLETED", caption, confidence, objects, "SAFE", "external");
-    }
-
-    private void validateImage(MultipartFile image) {
-        if (image == null || image.isEmpty()) {
-            throw new IllegalArgumentException("An image is required");
-        }
-        if (image.getSize() > MAX_IMAGE_SIZE) {
-            throw new IllegalArgumentException("Image must be smaller than 8 MB");
-        }
-        String contentType = image.getContentType();
-        if (contentType == null || !contentType.startsWith("image/")) {
-            throw new IllegalArgumentException("Only image files are supported");
-        }
+    public void savePhotoMissionLog(UUID userId, com.example.englishapp_server.curriculum.api.LearnerApiModels.PhotoMissionSaveRequest request) {
+        logRepository.save(PhotoMissionLog.builder()
+                .userId(userId)
+                .imageUrl(request.imageUrl() != null ? request.imageUrl() : "")
+                .caption(request.caption() != null ? request.caption() : "")
+                .discoveredVocabularies(request.vocabularies() != null ? request.vocabularies() : List.of())
+                .confidenceScore(request.confidenceScore())
+                .createdAt(LocalDateTime.now())
+                .build());
     }
 }

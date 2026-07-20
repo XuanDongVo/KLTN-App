@@ -33,7 +33,7 @@ class CurriculumHttpApiTests {
         }
 
         HttpClient client = HttpClient.newHttpClient();
-        URI pathUri = URI.create("http://127.0.0.1:" + port + "/api/v1/learner/path?level=PRE_A1_STARTERS");
+        URI pathUri = URI.create("http://127.0.0.1:" + port + "/api/learner/path?level=PRE_A1_STARTERS");
         var unauthorized = client.send(HttpRequest.newBuilder(pathUri).GET().build(), HttpResponse.BodyHandlers.ofString());
         assertThat(unauthorized.statusCode()).isEqualTo(401);
 
@@ -48,7 +48,7 @@ class CurriculumHttpApiTests {
         assertThat(pathData.path("units").get(0).path("lessons").get(1).path("unlocked").asBoolean()).isFalse();
         long lessonId = pathData.path("units").get(0).path("lessons").get(0).path("id").asLong();
 
-        URI startUri = URI.create("http://127.0.0.1:" + port + "/api/v1/lessons/" + lessonId + "/sessions");
+        URI startUri = URI.create("http://127.0.0.1:" + port + "/api/lessons/" + lessonId + "/sessions");
         var sessionResponse = client.send(HttpRequest.newBuilder(startUri)
                 .header("Authorization", "Bearer " + token)
                 .POST(HttpRequest.BodyPublishers.noBody()).build(), HttpResponse.BodyHandlers.ofString());

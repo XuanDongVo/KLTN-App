@@ -28,13 +28,6 @@ public class AdminMediaService {
         this.auditService = auditService;
     }
 
-    public MediaSignature signature(MediaSignatureRequest request) {
-        if (request == null || blank(request.fileName()) || blank(request.contentType())) {
-            throw new IllegalArgumentException("Thiếu tên file hoặc định dạng ảnh");
-        }
-        return new MediaSignature(cloudinaryService.generateAdminImageSignature(request.fileName(), request.contentType()));
-    }
-
     @Transactional
     public MediaAssetView register(UUID adminUserId, MediaAssetRequest request) {
         validate(request);

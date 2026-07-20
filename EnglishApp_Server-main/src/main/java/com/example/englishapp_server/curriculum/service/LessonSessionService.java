@@ -4,6 +4,9 @@ import com.example.englishapp_server.curriculum.api.LearnerApiModels.*;
 import com.example.englishapp_server.curriculum.domain.*;
 import com.example.englishapp_server.curriculum.repository.*;
 import com.example.englishapp_server.repository.jpa.UserRepository;
+import com.example.englishapp_server.repository.mongo.LearnerHistoryRepository;
+import com.example.englishapp_server.document.LearnerHistory;
+import com.example.englishapp_server.common.enums.ActivityType;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 import org.springframework.stereotype.Service;
@@ -24,6 +27,7 @@ public class LessonSessionService {
     private final UserRepository userRepository;
     private final ObjectMapper objectMapper;
     private final LearnerCurriculumService curriculumService;
+    private final LearnerHistoryRepository historyRepository;
 
     public LessonSessionService(LessonRepository lessonRepository,
                                 LearningActivityRepository activityRepository,
@@ -32,7 +36,8 @@ public class LessonSessionService {
                                 LearnerLessonProgressRepository progressRepository,
                                 UserRepository userRepository,
                                 ObjectMapper objectMapper,
-                                LearnerCurriculumService curriculumService) {
+                                LearnerCurriculumService curriculumService,
+                                LearnerHistoryRepository historyRepository) {
         this.lessonRepository = lessonRepository;
         this.activityRepository = activityRepository;
         this.sessionRepository = sessionRepository;
@@ -41,6 +46,7 @@ public class LessonSessionService {
         this.userRepository = userRepository;
         this.objectMapper = objectMapper;
         this.curriculumService = curriculumService;
+        this.historyRepository = historyRepository;
     }
 
     @Transactional
@@ -62,10 +68,10 @@ public class LessonSessionService {
                 .startedAt(LocalDateTime.now())
                 .build());
 
-        progressRepository.findByUserIdAndLessonId(userId, lessonId).orElseGet(() ->
+        progressRepository.findByUserIdAndLessonCode(userId, lesson.getCode()).orElseGet(() ->
                 progressRepository.save(LearnerLessonProgress.builder()
                         .userId(userId)
-                        .lesson(lesson)
+                        .lessonCode(lesson.getCode())
                         .progressStatus(ProgressStatus.IN_PROGRESS)
                         .bestScore(0)
                         .stars(0)
@@ -139,7 +145,7 @@ public class LessonSessionService {
         session.setSessionStatus(SessionStatus.COMPLETED);
         session.setFinishedAt(LocalDateTime.now());
 
-        LearnerLessonProgress progress = progressRepository.findByUserIdAndLessonId(userId, session.getLesson().getId())
+        LearnerLessonProgress progress = progressRepository.findByUserIdAndLessonCode(userId, session.getLesson().getCode())
                 .orElseThrow();
         boolean firstCompletion = progress.getProgressStatus() != ProgressStatus.COMPLETED;
         progress.setProgressStatus(ProgressStatus.COMPLETED);
@@ -159,6 +165,20 @@ public class LessonSessionService {
             user.setTotalScore(current + session.getXpEarned());
             userRepository.save(user);
         });
+
+        historyRepository.save(LearnerHistory.builder()
+                .userId(userId)
+                .activityType(ActivityType.UNIT_LEARNING)
+                .unitId(session.getLesson().getLearningUnit().getId())
+                .stats(Map.of(
+                        "score", score,
+                        "stars", stars,
+                        "correct", session.getCorrectAttempts(),
+                        "total", session.getTotalAttempts(),
+                        "xpEarned", session.getXpEarned()
+                ))
+                .timestamp(LocalDateTime.now())
+                .build());
 
         return new FinishResult(session.getId(), session.getCorrectAttempts(), session.getTotalAttempts(),
                 score, stars, session.getXpEarned(), session.getHeartsRemaining());

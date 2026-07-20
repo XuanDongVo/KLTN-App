@@ -71,8 +71,9 @@ public class AdminUserService {
                     .findFirstByLevelCodeAndLifecycleStatusOrderByImportedAtDesc(level, LifecycleStatus.PUBLISHED);
             if (published.isEmpty()) continue;
             long versionId = published.get().getId();
+            List<String> lessonCodes = lessonRepository.findLessonCodesByVersionId(versionId);
             List<LearnerLessonProgress> current = allProgress.stream()
-                    .filter(progress -> progress.getLesson().getLearningUnit().getCurriculumVersion().getId().equals(versionId))
+                    .filter(progress -> lessonCodes.contains(progress.getLessonCode()))
                     .toList();
             int completed = (int) current.stream().filter(progress -> progress.getProgressStatus() == ProgressStatus.COMPLETED).count();
             int stars = current.stream().mapToInt(LearnerLessonProgress::getStars).sum();

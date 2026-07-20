@@ -11,7 +11,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 public interface LearnerLessonProgressRepository extends JpaRepository<LearnerLessonProgress, Long> {
-    Optional<LearnerLessonProgress> findByUserIdAndLessonId(UUID userId, Long lessonId);
+    Optional<LearnerLessonProgress> findByUserIdAndLessonCode(UUID userId, String lessonCode);
     List<LearnerLessonProgress> findByUserId(UUID userId);
 
     @Query("select count(p) from LearnerLessonProgress p where p.progressStatus = com.example.englishapp_server.curriculum.domain.ProgressStatus.COMPLETED")
@@ -22,6 +22,6 @@ public interface LearnerLessonProgressRepository extends JpaRepository<LearnerLe
 
     long countByUserIdAndProgressStatus(UUID userId, ProgressStatus progressStatus);
 
-    @Query("select count(p) from LearnerLessonProgress p where p.lesson.learningUnit.curriculumVersion.id = :versionId")
+    @Query("select count(p) from LearnerLessonProgress p join Lesson l on p.lessonCode = l.code where l.learningUnit.curriculumVersion.id = :versionId")
     long countByCurriculumVersionId(@Param("versionId") Long versionId);
 }

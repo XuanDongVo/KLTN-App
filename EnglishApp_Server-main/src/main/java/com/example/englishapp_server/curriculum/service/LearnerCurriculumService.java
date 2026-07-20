@@ -30,7 +30,7 @@ public class LearnerCurriculumService {
 
     @Transactional(readOnly = true)
     public List<LevelSummary> getLevels(UUID userId) {
-        Map<Long, LearnerLessonProgress> progressByLesson = progressByLesson(userId);
+        Map<String, LearnerLessonProgress> progressByLesson = progressByLesson(userId);
         List<LevelSummary> summaries = new ArrayList<>();
         for (LevelCode levelCode : LevelCode.values()) {
             Optional<CurriculumVersion> optionalVersion = publishedVersion(levelCode);
@@ -52,7 +52,7 @@ public class LearnerCurriculumService {
     public LearningPath getPath(UUID userId, LevelCode levelCode) {
         CurriculumVersion version = publishedVersion(levelCode)
                 .orElseThrow(() -> new NoSuchElementException("No published curriculum for " + levelCode));
-        Map<Long, LearnerLessonProgress> progressByLesson = progressByLesson(userId);
+        Map<String, LearnerLessonProgress> progressByLesson = progressByLesson(userId);
         List<Lesson> orderedLessons = orderedLessons(version);
         List<LearningUnit> units = units(version);
         boolean levelUnlocked = isLevelUnlocked(levelCode, progressByLesson);
@@ -62,7 +62,7 @@ public class LearnerCurriculumService {
             if (levelUnlocked && index == 0) {
                 unlockedLessonIds.add(orderedLessons.get(index).getId());
             } else if (levelUnlocked) {
-                LearnerLessonProgress previous = progressByLesson.get(orderedLessons.get(index - 1).getId());
+                LearnerLessonProgress previous = progressByLesson.get(orderedLessons.get(index - 1).getCode());
                 if (isCompleted(previous)) {
                     unlockedLessonIds.add(orderedLessons.get(index).getId());
                 }
@@ -72,7 +72,7 @@ public class LearnerCurriculumService {
         List<UnitSummary> unitViews = units.stream().map(unit -> {
             List<LessonSummary> lessons = lessonRepository.findByLearningUnitIdOrderByOrderIndex(unit.getId())
                     .stream().map(lesson -> {
-                        LearnerLessonProgress progress = progressByLesson.get(lesson.getId());
+                        LearnerLessonProgress progress = progressByLesson.get(lesson.getCode());
                         ProgressStatus status = progress == null ? ProgressStatus.AVAILABLE : progress.getProgressStatus();
                         return new LessonSummary(
                                 lesson.getId(), lesson.getCode(), lesson.getTitle(), lesson.getObjective(),
@@ -100,7 +100,7 @@ public class LearnerCurriculumService {
             throw new SecurityException("Bài học không thuộc phiên bản chương trình đang hoạt động");
         }
 
-        Map<Long, LearnerLessonProgress> progressByLesson = progressByLesson(userId);
+        Map<String, LearnerLessonProgress> progressByLesson = progressByLesson(userId);
         if (!isLevelUnlocked(targetVersion.getLevelCode(), progressByLesson)) {
             throw new SecurityException("Hãy hoàn thành cấp độ trước để mở khóa cấp độ này");
         }
@@ -141,15 +141,15 @@ public class LearnerCurriculumService {
         return lessons;
     }
 
-    private Map<Long, LearnerLessonProgress> progressByLesson(UUID userId) {
-        Map<Long, LearnerLessonProgress> result = new HashMap<>();
+    private Map<String, LearnerLessonProgress> progressByLesson(UUID userId) {
+        Map<String, LearnerLessonProgress> result = new HashMap<>();
         for (LearnerLessonProgress progress : progressRepository.findByUserId(userId)) {
-            result.put(progress.getLesson().getId(), progress);
+            result.put(progress.getLessonCode(), progress);
         }
         return result;
     }
 
-    private boolean isLevelUnlocked(LevelCode levelCode, Map<Long, LearnerLessonProgress> progressByLesson) {
+    private boolean isLevelUnlocked(LevelCode levelCode, Map<String, LearnerLessonProgress> progressByLesson) {
         int levelIndex = levelCode.ordinal();
         if (levelIndex == 0) return true;
 
@@ -158,7 +158,7 @@ public class LearnerCurriculumService {
         if (previousVersion.isEmpty()) return false;
         List<Lesson> previousLessons = orderedLessons(previousVersion.get());
         return !previousLessons.isEmpty() && previousLessons.stream()
-                .allMatch(lesson -> isCompleted(progressByLesson.get(lesson.getId())));
+                .allMatch(lesson -> isCompleted(progressByLesson.get(lesson.getCode())));
     }
 
     private boolean isCompleted(LearnerLessonProgress progress) {
