@@ -13,6 +13,7 @@ export type AuthDto = {
   displayName: string;
   role: string;
   jwtToken: string;
+  refreshToken: string;
 };
 
 async function post<T>(path: string, payload: object | string): Promise<ServerResponse<T>> {
@@ -36,3 +37,7 @@ export const loginApi = (email: string, password: string) => post<AuthDto>('/api
 export const registerApi = (username: string, email: string, password: string) => post<any>('/api/auth/register', { username, email, password });
 export const sendVerifyAccountApi = (email: string) => post<any>('/api/verify/send/account', email);
 export const verifyAccountApi = (email: string, code: string) => post<any>('/api/verify/account', { email, code });
+export const refreshTokenApi = (refreshToken: string) => post<AuthDto>('/api/auth/refresh', { refreshToken });
+export const logoutApi = (refreshToken: string) => post<any>('/api/auth/logout', { refreshToken });
+export const logoutAllApi = (email: string) => post<any>('/api/auth/logout-all', { email });
+

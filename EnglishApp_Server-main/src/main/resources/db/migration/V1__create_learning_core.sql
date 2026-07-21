@@ -102,7 +102,7 @@ CREATE INDEX idx_activity_attempts_session ON activity_attempts (session_id, att
 CREATE TABLE learner_lesson_progress (
     id BIGINT NOT NULL AUTO_INCREMENT,
     user_id BINARY(16) NOT NULL,
-    lesson_id BIGINT NOT NULL,
+    lesson_code VARCHAR(80) NOT NULL,
     progress_status VARCHAR(20) NOT NULL,
     best_score INT NOT NULL,
     stars INT NOT NULL,
@@ -110,6 +110,5 @@ CREATE TABLE learner_lesson_progress (
     first_completed_at DATETIME(6),
     last_completed_at DATETIME(6),
     PRIMARY KEY (id),
-    CONSTRAINT uk_progress_user_lesson UNIQUE (user_id, lesson_id),
-    CONSTRAINT fk_progress_lesson FOREIGN KEY (lesson_id) REFERENCES lessons (id)
+    CONSTRAINT uk_progress_user_lesson UNIQUE (user_id, lesson_code)
 );

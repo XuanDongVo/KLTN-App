@@ -44,4 +44,41 @@ public class AuthController {
                     .body(ServerResponse.error(400, response.message()));
         }
     }
+
+    @PostMapping("/refresh")
+    public ResponseEntity<ServerResponse<AuthDto>> refresh(@RequestBody com.example.englishapp_server.dto.request.auth.RefreshTokenRequest request) {
+        AuthResponse response = this.authService.refresh(request);
+        if (response.result()) {
+            return ResponseEntity.ok(ServerResponse.success(response.authDto()));
+        } else {
+            return ResponseEntity.badRequest()
+                    .body(ServerResponse.error(400, response.message()));
+        }
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<ServerResponse<Object>> logout(@RequestBody com.example.englishapp_server.dto.request.auth.RefreshTokenRequest request) {
+        AuthResponse response = this.authService.logout(request);
+        if (response.result()) {
+            return ResponseEntity.ok(ServerResponse.success(null));
+        } else {
+            return ResponseEntity.badRequest()
+                    .body(ServerResponse.error(400, response.message()));
+        }
+    }
+
+    @PostMapping("/logout-all")
+    public ResponseEntity<ServerResponse<Object>> logoutAll(@RequestBody java.util.Map<String, String> body) {
+        String email = body.get("email");
+        if (email == null || email.isBlank()) {
+            return ResponseEntity.badRequest().body(ServerResponse.error(400, "Email is required"));
+        }
+        AuthResponse response = this.authService.logoutAll(email);
+        if (response.result()) {
+            return ResponseEntity.ok(ServerResponse.success(null));
+        } else {
+            return ResponseEntity.badRequest()
+                    .body(ServerResponse.error(400, response.message()));
+        }
+    }
 }

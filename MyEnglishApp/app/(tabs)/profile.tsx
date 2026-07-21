@@ -25,6 +25,7 @@ export default function ProfileScreen() {
     }).catch(() => undefined);
   }, []));
 
+
   return <SafeAreaView style={styles.safe} edges={['top']}><ScrollView contentContainerStyle={styles.content}>
     <View style={styles.profileHeader}>
       <View style={styles.avatar}><MaterialCommunityIcons name="account" size={56} color={Theme.colors.blueDark} /></View>
