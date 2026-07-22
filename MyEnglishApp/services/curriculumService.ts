@@ -27,6 +27,7 @@ export const curriculumService = {
     return request<BackendLearningPath>(`/api/learner/path?level=${level}`);
   },
   startLesson: (lessonId: number) => request<BackendLessonSession>(`/api/lessons/${lessonId}/sessions`, { method: 'POST' }),
+  startReviewSession: () => request<BackendLessonSession>('/api/learner/review/start', { method: 'POST' }),
   getSession: (sessionId: string) => request<BackendLessonSession>(`/api/sessions/${sessionId}`),
   submitAttempt: (sessionId: string, activityId: number, answer: unknown) =>
     request<BackendAttemptResult>(`/api/sessions/${sessionId}/attempts`, {

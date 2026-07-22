@@ -22,7 +22,8 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-@SpringBootTest
+
+@SpringBootTest(properties = "spring.data.mongodb.uuid-representation=standard")
 @Transactional
 class CurriculumVerticalSliceTests {
     private static final List<String> MANIFESTS = List.of(

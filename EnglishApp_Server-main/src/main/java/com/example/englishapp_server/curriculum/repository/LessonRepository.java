@@ -9,6 +9,7 @@ import java.util.List;
 
 public interface LessonRepository extends JpaRepository<Lesson, Long> {
     List<Lesson> findByLearningUnitIdOrderByOrderIndex(Long learningUnitId);
+    java.util.Optional<Lesson> findByCode(String code);
 
     @Query("select count(l) from Lesson l where l.learningUnit.curriculumVersion.id = :versionId")
     long countByCurriculumVersionId(@Param("versionId") Long versionId);

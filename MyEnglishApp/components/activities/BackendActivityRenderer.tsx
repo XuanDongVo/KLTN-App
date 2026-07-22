@@ -3,7 +3,9 @@ import * as Speech from 'expo-speech';
 import React, { useMemo, useState } from 'react';
 import { Image, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
+import { FlashCardActivity } from '@/components/activities/FlashCardActivity';
 import { SpeakingActivity } from '@/components/activities/SpeakingActivity';
+import { VocabularyCard } from '@/components/activities/VocabularyCard';
 import { ActionButton } from '@/components/ui/ActionButton';
 import { Theme } from '@/constants/Theme';
 import { resolveCurriculumMediaUrl } from '@/services/curriculumService';
@@ -32,6 +34,7 @@ export function BackendActivityRenderer({ activity, disabled, onSubmit }: Props)
   const [selectedLeft, setSelectedLeft] = useState<string>();
   const [pairs, setPairs] = useState<Record<string, string>>({});
   const [vocabularyIndex, setVocabularyIndex] = useState(0);
+  const [introFlipped, setIntroFlipped] = useState(false);
 
   const tokens = asStrings(content.tokens);
   const shuffledTokens = useMemo(() => [...tokens], [activity.id, content.tokens]);
@@ -59,25 +62,13 @@ export function BackendActivityRenderer({ activity, disabled, onSubmit }: Props)
           <Text style={styles.vocabularyProgressText}>TỪ {vocabularyIndex + 1}/{vocabularyItems.length}</Text>
           <View style={styles.progressDots}>{vocabularyItems.map((item, index) => <View key={item.word} style={[styles.progressDot, index <= vocabularyIndex && styles.progressDotActive]} />)}</View>
         </View>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={`Nghe từ ${current.word}`}
-          onPress={() => Speech.speak(current.word, { language: 'en-US', rate: 0.72 })}
-          style={({ pressed }) => [styles.vocabularyCard, pressed && styles.pressedCard]}
-        >
-          <View style={styles.wordSpeaker}><MaterialCommunityIcons name="volume-high" size={28} color="#FFFFFF" /></View>
-          <Text style={styles.vocabularyWord}>{current.word}</Text>
-          <View style={styles.meaningDivider} />
-          <Text style={styles.vocabularyMeaning}>{current.meaning}</Text>
-          {current.example ? <Text style={styles.vocabularyExample}>{current.example}</Text> : null}
-          <Text style={styles.tapHint}>Chạm vào thẻ để nghe phát âm</Text>
-        </Pressable>
+        <VocabularyCard item={current} onFlipped={setIntroFlipped} />
         <View style={styles.navigationRow}>
           <Pressable
             accessibilityRole="button"
             accessibilityLabel="Từ trước"
             disabled={disabled || vocabularyIndex === 0}
-            onPress={() => setVocabularyIndex((index) => Math.max(0, index - 1))}
+            onPress={() => { setVocabularyIndex((index) => Math.max(0, index - 1)); setIntroFlipped(false); }}
             style={[styles.previousButton, vocabularyIndex === 0 && styles.navigationDisabled]}
           >
             <MaterialCommunityIcons name="arrow-left" size={24} color={Theme.colors.ink} />
@@ -86,10 +77,11 @@ export function BackendActivityRenderer({ activity, disabled, onSubmit }: Props)
             <ActionButton
               label={isLast ? 'Hoàn thành khám phá' : 'Từ tiếp theo'}
               icon={isLast ? 'check' : 'arrow-right'}
-              disabled={disabled}
-              onPress={() => isLast
-                ? onSubmit({ completed: true })
-                : setVocabularyIndex((index) => index + 1)}
+              disabled={disabled || !introFlipped}
+              onPress={() => {
+                if (isLast) onSubmit({ completed: true });
+                else { setVocabularyIndex((index) => index + 1); setIntroFlipped(false); }
+              }}
             />
           </View>
         </View>
@@ -98,17 +90,15 @@ export function BackendActivityRenderer({ activity, disabled, onSubmit }: Props)
   }
 
   if (activity.type === 'FLASHCARD') {
-    const speechText = asString(content.speechText) || asString(content.term) || activity.prompt;
-    return <View style={styles.stack}>
-      {image ? <Image accessibilityLabel={imageAlt} source={image} style={[styles.heroImage, { aspectRatio: imageRatio }]} resizeMode="contain" /> : null}
-      <Text style={styles.cardTitle}>{asString(content.term) || activity.prompt}</Text>
-      {asString(content.meaning) ? <Text style={styles.meaning}>{asString(content.meaning)}</Text> : null}
-      <Pressable accessibilityRole="button" onPress={() => Speech.speak(speechText, { language: 'en-US', rate: 0.72 })} style={styles.listenButton}>
-        <MaterialCommunityIcons name="volume-high" size={22} color={Theme.colors.blueDark} />
-        <Text style={styles.listenText}>Nghe phát âm</Text>
-      </Pressable>
-      <ActionButton label="Tiếp tục" icon="arrow-right" disabled={disabled} onPress={() => onSubmit({ completed: true })} />
-    </View>;
+    return <FlashCardActivity
+      activity={activity}
+      content={content}
+      image={image}
+      imageAlt={imageAlt}
+      imageRatio={imageRatio}
+      disabled={disabled}
+      onSubmit={onSubmit}
+    />;
   }
 
   if (activity.type === 'SPEAK') {

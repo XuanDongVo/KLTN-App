@@ -26,6 +26,8 @@ class CurriculumHttpApiTests {
     @Autowired JwtConfig jwtConfig;
     @Autowired ObjectMapper objectMapper;
 
+    @Autowired com.example.englishapp_server.repository.jpa.UserRepository userRepository;
+
     @Test
     void protectsApiAndServesSessionWithoutAnswerKeys() throws Exception {
         try (var input = new ClassPathResource("curriculum/starters-v4/manifest.json").getInputStream()) {
@@ -37,7 +39,15 @@ class CurriculumHttpApiTests {
         var unauthorized = client.send(HttpRequest.newBuilder(pathUri).GET().build(), HttpResponse.BodyHandlers.ofString());
         assertThat(unauthorized.statusCode()).isEqualTo(401);
 
-        String token = jwtConfig.generateToken(UUID.randomUUID(), 0);
+        com.example.englishapp_server.entity.User user = new com.example.englishapp_server.entity.User();
+        user.setUsername("testlearner_" + UUID.randomUUID().toString().substring(0, 8));
+        user.setEmail("learner_" + UUID.randomUUID().toString().substring(0, 8) + "@example.com");
+        user.setPasswordHash("hash");
+        user.setRole(com.example.englishapp_server.common.enums.UserRole.USER);
+        user.setAccountStatus(com.example.englishapp_server.common.enums.AccountStatus.ACTIVE);
+        user = userRepository.save(user);
+
+        String token = jwtConfig.generateToken(user.getId(), 0);
         var pathResponse = client.send(HttpRequest.newBuilder(pathUri)
                 .header("Authorization", "Bearer " + token).GET().build(), HttpResponse.BodyHandlers.ofString());
         assertThat(pathResponse.statusCode()).isEqualTo(200);

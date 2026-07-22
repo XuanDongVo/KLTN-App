@@ -20,8 +20,8 @@ public class LessonSession {
     @Column(name = "user_id", nullable = false)
     private UUID userId;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "lesson_id", nullable = false)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "lesson_id")
     private Lesson lesson;
 
     @Enumerated(EnumType.STRING)
@@ -51,4 +51,10 @@ public class LessonSession {
 
     @Column(name = "finished_at")
     private LocalDateTime finishedAt;
+
+    @Column(name = "selected_activity_ids_json", columnDefinition = "TEXT")
+    private String selectedActivityIdsJson;
+
+    @Column(name = "dynamic_activities_json", columnDefinition = "TEXT")
+    private String dynamicActivitiesJson;
 }

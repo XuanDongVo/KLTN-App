@@ -40,7 +40,7 @@ public class LearnerCurriculumService {
             List<LearningUnit> units = units(version);
             List<Lesson> lessons = orderedLessons(version);
             int completed = (int) lessons.stream()
-                    .filter(lesson -> isCompleted(progressByLesson.get(lesson.getId())))
+                    .filter(lesson -> isCompleted(progressByLesson.get(lesson.getCode())))
                     .count();
             summaries.add(new LevelSummary(levelCode, version.getTitle(), version.getVersionCode(),
                     units.size(), lessons.size(), completed, isLevelUnlocked(levelCode, progressByLesson)));
@@ -119,7 +119,7 @@ public class LearnerCurriculumService {
         if (targetIndex == 0) return;
 
         Lesson previousLesson = lessons.get(targetIndex - 1);
-        if (!isCompleted(progressByLesson.get(previousLesson.getId()))) {
+        if (!isCompleted(progressByLesson.get(previousLesson.getCode()))) {
             throw new SecurityException("Hãy hoàn thành bài trước để mở khóa bài học này");
         }
     }

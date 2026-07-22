@@ -44,7 +44,7 @@ export default function ProfileScreen() {
     <Text style={styles.sectionTitle}>Khám phá</Text>
     <Pressable style={styles.mission} onPress={() => router.push('/(learner)/photo-mission')}>
       <View style={styles.missionIcon}><MaterialCommunityIcons name="camera-iris" size={30} color={Theme.colors.violet} /></View>
-      <View style={styles.missionCopy}><Text style={styles.missionTitle}>Photo Mission</Text><Text style={styles.missionText}>Chụp hoặc chọn ảnh để tạo caption tiếng Anh</Text><Text style={styles.missionCount}>{state.captionCount} ảnh đã thử</Text></View>
+      <View style={styles.missionCopy}><Text style={styles.missionTitle}>Photo Mission</Text><Text style={styles.missionText}>Chụp hoặc chọn ảnh để tạo caption tiếng Anh</Text></View>
       <MaterialCommunityIcons name="chevron-right" size={25} color={Theme.colors.muted} />
     </Pressable>
   </ScrollView></SafeAreaView>;
@@ -74,5 +74,4 @@ const styles = StyleSheet.create({
   missionCopy: { flex: 1 },
   missionTitle: { color: Theme.colors.ink, fontWeight: '900', fontSize: 16 },
   missionText: { color: Theme.colors.muted, fontSize: 12, marginTop: 3 },
-  missionCount: { color: Theme.colors.violet, fontSize: 11, fontWeight: '800', marginTop: 5 },
 });

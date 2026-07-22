@@ -31,6 +31,12 @@ export default function ReviewScreen() {
     <View style={styles.header}><Text style={styles.eyebrow}>PRE A1 STARTERS</Text><Text style={styles.title}>Ôn tập</Text></View>
     {loading ? <View style={styles.center}><ActivityIndicator size="large" color={Theme.colors.green} /></View> : <ScrollView contentContainerStyle={styles.content}>
       {error ? <Text style={styles.error}>{error}</Text> : null}
+      <Pressable style={styles.primaryButton} onPress={() => router.push('/(learner)/review-session')}>
+        <MaterialCommunityIcons name="brain" size={24} color="#FFFFFF" />
+        <Text style={styles.primaryText}>Ôn tập tổng hợp</Text>
+      </Pressable>
+      <View style={{ height: 1, backgroundColor: Theme.colors.border, marginVertical: 10 }} />
+
       {!error && lessons.length === 0 ? <View style={styles.empty}>
         <View style={styles.emptyIcon}><MaterialCommunityIcons name="brain" size={48} color={Theme.colors.violet} /></View>
         <Text style={styles.emptyTitle}>Chưa có bài cần ôn</Text>

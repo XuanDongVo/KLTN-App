@@ -1,15 +1,37 @@
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
-import { useRouter } from 'expo-router';
-import React from 'react';
-import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import * as Speech from 'expo-speech';
+import { useFocusEffect, useRouter } from 'expo-router';
+import React, { useCallback, useState } from 'react';
+import { ActivityIndicator, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { exploreStyles as styles } from '@/styles/exploreStyles';
 
 import { Theme } from '@/constants/Theme';
+import { getPhotoMissionLogs, PhotoMissionLog } from '@/services/photoMissionService';
 
 const photoMissionImage = require('@/assets/images/lessons/greetings.png'); // Placeholder
 
 export default function ExploreScreen() {
   const router = useRouter();
+  const [logs, setLogs] = useState<PhotoMissionLog[]>([]);
+  const [loadingLogs, setLoadingLogs] = useState(true);
+
+  const fetchLogs = useCallback(async () => {
+    try {
+      const data = await getPhotoMissionLogs();
+      setLogs(data);
+    } catch {
+      // Ignore errors
+    } finally {
+      setLoadingLogs(false);
+    }
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchLogs();
+    }, [fetchLogs])
+  );
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
@@ -40,105 +62,47 @@ export default function ExploreScreen() {
             </View>
           </View>
         </Pressable>
+
+        <Text style={[styles.sectionTitle, { marginTop: 30 }]}>Bộ sưu tập của bé</Text>
+        {loadingLogs ? (
+          <ActivityIndicator size="large" color={Theme.colors.violet} style={{ marginTop: 20 }} />
+        ) : logs.length === 0 ? (
+          <View style={styles.emptyState}>
+            <MaterialCommunityIcons name="image-outline" size={40} color={Theme.colors.border} />
+            <Text style={styles.emptyStateText}>Bé chưa lưu thẻ bài nào.</Text>
+            <Text style={styles.emptyStateSubtext}>Hãy làm nhiệm vụ chụp ảnh và lưu lại nhé!</Text>
+          </View>
+        ) : (
+          <View style={styles.logList}>
+            {logs.map(log => (
+              <View key={log.id} style={styles.logCard}>
+                <Image source={{ uri: log.imageUrl }} style={styles.logImage} />
+                <View style={styles.logCardContent}>
+                  <Text style={styles.logCaption}>{log.caption}</Text>
+                  
+                  <View style={styles.vocabRow}>
+                    {log.discoveredVocabularies?.map(word => (
+                      <View key={word} style={styles.vocabBadge}>
+                        <Text style={styles.vocabBadgeText}>{word}</Text>
+                      </View>
+                    ))}
+                  </View>
+
+                  <Pressable 
+                    style={styles.listenBtn} 
+                    onPress={() => Speech.speak(log.caption, { language: 'en-US', rate: 0.75 })}
+                  >
+                    <MaterialCommunityIcons name="volume-high" size={20} color={Theme.colors.blueDark} />
+                    <Text style={styles.listenBtnText}>Nghe</Text>
+                  </Pressable>
+                </View>
+              </View>
+            ))}
+          </View>
+        )}
       </ScrollView>
     </SafeAreaView>
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#F8F9FA' },
-  header: {
-    paddingHorizontal: 22,
-    paddingVertical: 16,
-    backgroundColor: '#FFFFFF',
-    borderBottomWidth: 1,
-    borderBottomColor: Theme.colors.border,
-  },
-  headerTitle: {
-    fontSize: 24,
-    fontWeight: '900',
-    color: Theme.colors.ink,
-  },
-  content: {
-    padding: 22,
-    paddingBottom: 40,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '800',
-    color: Theme.colors.ink,
-    marginBottom: 16,
-  },
-  card: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    borderWidth: 2,
-    borderColor: Theme.colors.border,
-    overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  cardPressed: {
-    transform: [{ scale: 0.98 }],
-    borderColor: Theme.colors.green,
-  },
-  cardImageContainer: {
-    height: 160,
-    backgroundColor: '#EAF7FE',
-    alignItems: 'center',
-    justifyContent: 'center',
-    position: 'relative',
-  },
-  cardImage: {
-    width: '100%',
-    height: '100%',
-  },
-  badge: {
-    position: 'absolute',
-    top: 12,
-    right: 12,
-    backgroundColor: Theme.colors.coral,
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-    gap: 4,
-  },
-  badgeText: {
-    color: '#FFFFFF',
-    fontSize: 10,
-    fontWeight: '900',
-  },
-  cardContent: {
-    padding: 20,
-  },
-  cardTitle: {
-    fontSize: 20,
-    fontWeight: '800',
-    color: Theme.colors.ink,
-    marginBottom: 8,
-  },
-  cardDescription: {
-    fontSize: 15,
-    lineHeight: 22,
-    color: Theme.colors.muted,
-    marginBottom: 20,
-  },
-  actionRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingTop: 16,
-    borderTopWidth: 1,
-    borderTopColor: '#F0F0F0',
-  },
-  actionText: {
-    fontSize: 16,
-    fontWeight: '800',
-    color: Theme.colors.greenDark,
-  },
-});
+

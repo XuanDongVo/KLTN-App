@@ -1,22 +1,29 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import * as ImagePicker from 'expo-image-picker';
 import * as Speech from 'expo-speech';
 import React, { useState } from 'react';
-import { ActivityIndicator, Alert, Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Image, Modal, Pressable, StyleSheet, Text, TextInput, View, ScrollView } from 'react-native';
 
 import { ActionButton } from '@/components/ui/ActionButton';
 import { Theme } from '@/constants/Theme';
-import { useLearning } from '@/context/LearningContext';
 import { createImageCaption } from '@/services/imageCaptionService';
+import { getUploadSignature, uploadToCloudinary } from '@/services/uploadService';
+import { savePhotoMissionLog } from '@/services/photoMissionService';
 import { CaptionResult } from '@/types/learning';
+import { photoMissionStyles as styles } from '@/styles/photoMissionStyles';
 
 type Props = { onComplete?: () => void };
 
 export function PhotoMissionActivity({ onComplete }: Props) {
-  const { recordCaption } = useLearning();
   const [uri, setUri] = useState<string>();
   const [caption, setCaption] = useState<CaptionResult>();
   const [loading, setLoading] = useState(false);
+
+  const [saveModalVisible, setSaveModalVisible] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [vocabList, setVocabList] = useState<string[]>([]);
+  const [newVocab, setNewVocab] = useState('');
 
   const choose = async (source: 'camera' | 'gallery') => {
     if (source === 'camera') {
@@ -41,11 +48,50 @@ export function PhotoMissionActivity({ onComplete }: Props) {
     try {
       const result = await createImageCaption(uri);
       setCaption(result);
-      await recordCaption();
     } catch {
       Alert.alert('Chưa nhận diện được', 'Thử lại với ảnh rõ và đủ sáng hơn nhé.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const openSaveModal = () => {
+    setVocabList(caption?.objects || []);
+    setNewVocab('');
+    setSaveModalVisible(true);
+  };
+
+  const addVocab = () => {
+    const trimmed = newVocab.trim();
+    if (trimmed && !vocabList.includes(trimmed.toLowerCase())) {
+      setVocabList([...vocabList, trimmed.toLowerCase()]);
+    }
+    setNewVocab('');
+  };
+
+  const removeVocab = (word: string) => {
+    setVocabList(vocabList.filter(w => w !== word));
+  };
+
+  const confirmSave = async () => {
+    if (!uri || !caption) return;
+    setSaving(true);
+    try {
+      const userId = await AsyncStorage.getItem('userId');
+      if (!userId) throw new Error('Not logged in');
+
+      const ext = uri.split('.').pop() || 'jpg';
+      const sig = await getUploadSignature(userId, ext);
+      const secureUrl = await uploadToCloudinary(uri, sig);
+      
+      await savePhotoMissionLog(secureUrl, caption.caption, vocabList);
+      
+      setSaveModalVisible(false);
+      Alert.alert('Thành công', 'Đã lưu thẻ bài vào bộ sưu tập vĩnh viễn!');
+    } catch (e) {
+      Alert.alert('Lỗi', 'Không thể lưu thẻ bài. Vui lòng thử lại.');
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -55,8 +101,66 @@ export function PhotoMissionActivity({ onComplete }: Props) {
     <Text style={styles.smallLabel}>AI CAPTION</Text>
     <Text style={styles.caption}>{caption.caption}</Text>
     <Text style={styles.translation}>Hãy nghe và đọc to câu tiếng Anh này một lần.</Text>
-    <Pressable style={styles.listenCaption} onPress={() => Speech.speak(caption.caption, { language: 'en-US', rate: 0.75 })}><MaterialCommunityIcons name="volume-high" size={22} color={Theme.colors.blueDark} /><Text style={styles.listenCaptionText}>Nghe caption</Text></Pressable>
+    
+    <View style={styles.resultActions}>
+      <Pressable style={styles.listenCaption} onPress={() => Speech.speak(caption.caption, { language: 'en-US', rate: 0.75 })}>
+        <MaterialCommunityIcons name="volume-high" size={22} color={Theme.colors.blueDark} />
+      </Pressable>
+      <Pressable style={styles.saveCaption} onPress={openSaveModal}>
+        <MaterialCommunityIcons name="content-save" size={22} color={Theme.colors.violet} />
+        <Text style={styles.saveCaptionText}>Lưu thẻ bài</Text>
+      </Pressable>
+    </View>
+
     <ActionButton label={onComplete ? 'Đã đọc xong' : 'Thử ảnh khác'} icon={onComplete ? 'check' : 'camera-retake'} onPress={() => onComplete ? onComplete() : setCaption(undefined)} />
+
+    <Modal visible={saveModalVisible} transparent animationType="slide">
+      <View style={styles.modalOverlay}>
+        <View style={styles.modalContent}>
+          <Text style={styles.modalTitle}>Lưu vào Bộ sưu tập</Text>
+          <View style={styles.warningBox}>
+            <MaterialCommunityIcons name="information" size={20} color={Theme.colors.blueDark} />
+            <Text style={styles.warningText}>Thẻ bài sẽ được lưu vĩnh viễn vào bộ sưu tập của con đấy nhé!</Text>
+          </View>
+          
+          <Text style={styles.vocabLabel}>Từ vựng trong ảnh:</Text>
+          <View style={styles.vocabContainer}>
+            {vocabList.map(word => (
+              <View key={word} style={styles.vocabChip}>
+                <Text style={styles.vocabChipText}>{word}</Text>
+                <Pressable onPress={() => removeVocab(word)} hitSlop={10}>
+                  <MaterialCommunityIcons name="close-circle" size={16} color={Theme.colors.muted} />
+                </Pressable>
+              </View>
+            ))}
+          </View>
+          
+          <View style={styles.addVocabRow}>
+            <TextInput 
+              style={styles.vocabInput}
+              value={newVocab}
+              onChangeText={setNewVocab}
+              placeholder="Thêm từ vựng mới..."
+              onSubmitEditing={addVocab}
+            />
+            <Pressable style={styles.addVocabBtn} onPress={addVocab}>
+              <MaterialCommunityIcons name="plus" size={24} color="#FFF" />
+            </Pressable>
+          </View>
+
+          {saving ? <ActivityIndicator size="large" color={Theme.colors.violet} style={{marginTop: 20}} /> : (
+            <View style={styles.modalActions}>
+              <Pressable style={styles.cancelBtn} onPress={() => setSaveModalVisible(false)}>
+                <Text style={styles.cancelBtnText}>Hủy</Text>
+              </Pressable>
+              <Pressable style={styles.confirmBtn} onPress={confirmSave}>
+                <Text style={styles.confirmBtnText}>Xác nhận lưu</Text>
+              </Pressable>
+            </View>
+          )}
+        </View>
+      </View>
+    </Modal>
   </View>;
 
   return <View style={styles.container}>
@@ -70,14 +174,4 @@ export function PhotoMissionActivity({ onComplete }: Props) {
   </View>;
 }
 
-const styles = StyleSheet.create({
-  container: { gap: 14 }, result: { alignItems: 'center', gap: 10 },
-  preview: { width: '100%', aspectRatio: 4 / 3, borderRadius: 8, backgroundColor: '#E8EEF2' },
-  placeholder: { width: '100%', aspectRatio: 4 / 3, borderRadius: 8, borderWidth: 2, borderStyle: 'dashed', borderColor: '#BFD9E8', backgroundColor: '#EFF9FE', alignItems: 'center', justifyContent: 'center', padding: 30, gap: 12 },
-  placeholderText: { color: Theme.colors.muted, textAlign: 'center', fontWeight: '700', lineHeight: 20 },
-  actions: { flexDirection: 'row', gap: 10 }, sourceButton: { flex: 1, minHeight: 64, borderWidth: 1, borderColor: Theme.colors.border, backgroundColor: '#FFFFFF', borderRadius: 8, alignItems: 'center', justifyContent: 'center', gap: 3 }, sourceLabel: { color: Theme.colors.ink, fontWeight: '800' },
-  loading: { minHeight: 52, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 9 }, loadingText: { color: Theme.colors.muted, fontWeight: '700' },
-  privacy: { color: Theme.colors.muted, fontSize: 11, textAlign: 'center', lineHeight: 16 }, captionIcon: { width: 52, height: 52, borderRadius: 26, backgroundColor: '#F0EDFF', alignItems: 'center', justifyContent: 'center', marginTop: -26 },
-  smallLabel: { color: Theme.colors.violet, fontSize: 11, fontWeight: '900' }, caption: { color: Theme.colors.ink, fontSize: 23, lineHeight: 30, fontWeight: '900', textAlign: 'center' }, translation: { color: Theme.colors.muted, marginBottom: 4 },
-  listenCaption: { minHeight: 48, paddingHorizontal: 16, borderRadius: 8, backgroundColor: '#EAF7FE', borderWidth: 1, borderColor: '#B9E3F8', flexDirection: 'row', alignItems: 'center', gap: 8 }, listenCaptionText: { color: Theme.colors.blueDark, fontWeight: '900' },
-});
+
