@@ -8,7 +8,7 @@ import java.util.UUID;
 
 @Entity
 @Table(name = "learner_lesson_progress", uniqueConstraints =
-        @UniqueConstraint(name = "uk_progress_user_lesson", columnNames = {"user_id", "lesson_id"}))
+        @UniqueConstraint(name = "uk_progress_user_lesson", columnNames = {"user_id", "lesson_code"}))
 @Getter
 @Setter
 @Builder
@@ -22,9 +22,8 @@ public class LearnerLessonProgress {
     @Column(name = "user_id", nullable = false)
     private UUID userId;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "lesson_id", nullable = false)
-    private Lesson lesson;
+    @Column(name = "lesson_code", nullable = false, length = 80)
+    private String lessonCode;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "progress_status", nullable = false, length = 20)

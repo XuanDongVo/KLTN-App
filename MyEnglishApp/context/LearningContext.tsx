@@ -13,7 +13,6 @@ const initialState: LearnerState = {
   completedLessonIds: [],
   results: {},
   mistakeActivityIds: [],
-  captionCount: 0,
 };
 
 type LearningContextValue = {
@@ -21,7 +20,6 @@ type LearningContextValue = {
   ready: boolean;
   completeLesson: (result: LessonResult) => Promise<void>;
   resolveMistake: (activityId: string) => Promise<void>;
-  recordCaption: () => Promise<void>;
   resetProgress: () => Promise<void>;
 };
 
@@ -63,15 +61,11 @@ export function LearningProvider({ children }: React.PropsWithChildren) {
     await persist({ ...state, mistakeActivityIds: state.mistakeActivityIds.filter((id) => id !== activityId) });
   }, [persist, state]);
 
-  const recordCaption = useCallback(async () => {
-    await persist({ ...state, captionCount: state.captionCount + 1 });
-  }, [persist, state]);
-
   const resetProgress = useCallback(async () => persist(initialState), [persist]);
 
   const value = useMemo(
-    () => ({ state, ready, completeLesson, resolveMistake, recordCaption, resetProgress }),
-    [state, ready, completeLesson, resolveMistake, recordCaption, resetProgress],
+    () => ({ state, ready, completeLesson, resolveMistake, resetProgress }),
+    [state, ready, completeLesson, resolveMistake, resetProgress],
   );
   return <LearningContext.Provider value={value}>{children}</LearningContext.Provider>;
 }

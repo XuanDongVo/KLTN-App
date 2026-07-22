@@ -20,7 +20,7 @@ public class LearnerHistory {
 
     @Indexed
     @Field("user_id")
-    private UUID userId;
+    private String userId;
 
     @Field("activity_type")
     private ActivityType activityType;

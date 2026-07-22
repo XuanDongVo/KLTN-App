@@ -5,5 +5,6 @@ public enum ActivityType {
     FLASHCARD,
     REVIEW,
     UNIT_LEARNING,
-    AI_CAMERA
+    AI_CAMERA,
+    PHOTO_MISSION
 }

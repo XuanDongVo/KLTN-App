@@ -8,23 +8,31 @@ import org.springframework.data.mongodb.core.mapping.Field;
 import java.time.LocalDateTime;
 import java.util.Map;
 
-@Document(collection = "image_loading_logs")
+@Document(collection = "photo_mission_logs")
 @Data @Builder
 @NoArgsConstructor @AllArgsConstructor
-public class ImageLoadingLog {
+public class PhotoMissionLog {
     @Id
     private String id;
 
     @Indexed
     @Field("user_id")
-    private Long userId;
+    private java.util.UUID userId;
 
-    @Field("captured_image_url")
-    private String capturedImageUrl;
+    @Field("image_url")
+    private String imageUrl;
 
-    // FastAPI return a JSON when upload image
-    @Field("raw_payload")
-    private Map<String, Object> rawPayload;
+    @Field("caption")
+    private String caption;
+
+    @Field("discovered_vocabularies")
+    private java.util.List<String> discoveredVocabularies;
+
+    @Field("confidence_score")
+    private Double confidenceScore;
+
+    @Field("raw_api_response")
+    private Map<String, Object> rawApiResponse;
 
     @Field("created_at")
     private LocalDateTime createdAt;

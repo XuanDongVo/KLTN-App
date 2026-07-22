@@ -27,7 +27,9 @@ export default function LoginScreen() {
     try {
       const response = await loginApi(email.trim(), password);
       await AsyncStorage.multiSet([
+        ['userId', response.data.id],
         ['userToken', response.data.jwtToken],
+        ['refreshToken', response.data.refreshToken],
         ['userRole', response.data.role],
         ['userEmail', email.trim()],
       ]);

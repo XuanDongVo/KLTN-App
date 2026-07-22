@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/v1/admin/curriculum")
+@RequestMapping("/api/admin/curriculum")
 public class AdminCurriculumController {
     private final AdminCurriculumService service;
     private final AdminAuditService auditService;

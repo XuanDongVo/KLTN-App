@@ -4,22 +4,33 @@ import com.example.englishapp_server.curriculum.api.LearnerApiModels.AttemptRequ
 import com.example.englishapp_server.curriculum.domain.LevelCode;
 import com.example.englishapp_server.curriculum.service.LearnerCurriculumService;
 import com.example.englishapp_server.curriculum.service.LessonSessionService;
+import com.example.englishapp_server.curriculum.service.ReviewSessionService;
+import com.example.englishapp_server.service.ImageCaptionService;
 import com.example.englishapp_server.dto.response.ServerResponse;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import com.example.englishapp_server.entity.User;
 
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/v1")
+@RequestMapping("/api")
 public class LearnerCurriculumController {
     private final LearnerCurriculumService curriculumService;
     private final LessonSessionService sessionService;
+    private final ImageCaptionService imageCaptionService;
+    private final ReviewSessionService reviewSessionService;
 
     public LearnerCurriculumController(LearnerCurriculumService curriculumService,
-                                       LessonSessionService sessionService) {
+                                       LessonSessionService sessionService,
+                                       ImageCaptionService imageCaptionService,
+                                       ReviewSessionService reviewSessionService) {
         this.curriculumService = curriculumService;
         this.sessionService = sessionService;
+        this.imageCaptionService = imageCaptionService;
+        this.reviewSessionService = reviewSessionService;
     }
 
     @GetMapping("/learner/levels")
@@ -55,4 +66,16 @@ public class LearnerCurriculumController {
     public ResponseEntity<?> finish(@RequestAttribute("userId") String userId, @PathVariable UUID sessionId) {
         return ResponseEntity.ok(ServerResponse.success(sessionService.finish(UUID.fromString(userId), sessionId)));
     }
+
+    @PostMapping("/learner/photo-mission/save")
+    public ResponseEntity<?> savePhotoMissionLog(@RequestAttribute("userId") String userId, @RequestBody LearnerApiModels.PhotoMissionSaveRequest request) {
+        imageCaptionService.savePhotoMissionLog(UUID.fromString(userId), request);
+        return ResponseEntity.ok(ServerResponse.success("Saved successfully"));
+    }
+
+    @PostMapping("/learner/review/start")
+    public ResponseEntity<?> startReviewSession(@RequestAttribute("userId") String userId) {
+        return ResponseEntity.ok(ServerResponse.success(reviewSessionService.startReview(UUID.fromString(userId))));
+    }
+
 }

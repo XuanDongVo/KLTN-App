@@ -4,6 +4,9 @@ import com.example.englishapp_server.curriculum.api.LearnerApiModels.*;
 import com.example.englishapp_server.curriculum.domain.*;
 import com.example.englishapp_server.curriculum.repository.*;
 import com.example.englishapp_server.repository.jpa.UserRepository;
+import com.example.englishapp_server.repository.mongo.LearnerHistoryRepository;
+import com.example.englishapp_server.document.LearnerHistory;
+import com.example.englishapp_server.common.enums.ActivityType;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 import org.springframework.stereotype.Service;
@@ -24,6 +27,7 @@ public class LessonSessionService {
     private final UserRepository userRepository;
     private final ObjectMapper objectMapper;
     private final LearnerCurriculumService curriculumService;
+    private final LearnerHistoryRepository historyRepository;
 
     public LessonSessionService(LessonRepository lessonRepository,
                                 LearningActivityRepository activityRepository,
@@ -32,7 +36,8 @@ public class LessonSessionService {
                                 LearnerLessonProgressRepository progressRepository,
                                 UserRepository userRepository,
                                 ObjectMapper objectMapper,
-                                LearnerCurriculumService curriculumService) {
+                                LearnerCurriculumService curriculumService,
+                                LearnerHistoryRepository historyRepository) {
         this.lessonRepository = lessonRepository;
         this.activityRepository = activityRepository;
         this.sessionRepository = sessionRepository;
@@ -41,6 +46,32 @@ public class LessonSessionService {
         this.userRepository = userRepository;
         this.objectMapper = objectMapper;
         this.curriculumService = curriculumService;
+        this.historyRepository = historyRepository;
+    }
+
+    @Transactional
+    public SessionView startDynamicSession(UUID userId, List<LearningActivity> activities) {
+        String dynamicJson = null;
+        try {
+            dynamicJson = objectMapper.writeValueAsString(activities);
+        } catch (Exception e) {}
+
+        LessonSession session = sessionRepository.save(LessonSession.builder()
+                .id(UUID.randomUUID())
+                .userId(userId)
+                .lesson(null)
+                .sessionStatus(SessionStatus.IN_PROGRESS)
+                .currentActivityIndex(0)
+                .totalAttempts(0)
+                .correctAttempts(0)
+                .heartsStarted(STARTING_HEARTS)
+                .heartsRemaining(STARTING_HEARTS)
+                .xpEarned(0)
+                .startedAt(LocalDateTime.now())
+                .dynamicActivitiesJson(dynamicJson)
+                .build());
+
+        return toView(session);
     }
 
     @Transactional
@@ -48,6 +79,38 @@ public class LessonSessionService {
         Lesson lesson = lessonRepository.findById(lessonId)
                 .orElseThrow(() -> new NoSuchElementException("Lesson not found"));
         curriculumService.requireUnlocked(userId, lesson);
+
+        LearnerLessonProgress progress = progressRepository.findByUserIdAndLessonCode(userId, lesson.getCode())
+                .orElse(null);
+        boolean isRelearn = progress != null && progress.getProgressStatus() == ProgressStatus.COMPLETED;
+
+        List<LearningActivity> allActivities = activityRepository.findByLessonIdOrderByOrderIndex(lessonId);
+        List<Long> selectedIds = null;
+        if (isRelearn) {
+            List<LearningActivity> flashcards = new ArrayList<>();
+            List<LearningActivity> others = new ArrayList<>();
+            for (LearningActivity act : allActivities) {
+                if (act.getActivityType() == LearningActivityType.FLASHCARD) {
+                    flashcards.add(act);
+                } else {
+                    others.add(act);
+                }
+            }
+            Collections.shuffle(others);
+            List<LearningActivity> selected = new ArrayList<>(flashcards);
+            for (int i = 0; i < others.size() && selected.size() < 8; i++) {
+                selected.add(others.get(i));
+            }
+            // Sort by original order index for consistency (optional)
+            selected.sort(Comparator.comparingInt(LearningActivity::getOrderIndex));
+            selectedIds = selected.stream().map(LearningActivity::getId).toList();
+        }
+
+        String selectedIdsJson = null;
+        try {
+            if (selectedIds != null) selectedIdsJson = objectMapper.writeValueAsString(selectedIds);
+        } catch (Exception e) {}
+
         LessonSession session = sessionRepository.save(LessonSession.builder()
                 .id(UUID.randomUUID())
                 .userId(userId)
@@ -60,17 +123,19 @@ public class LessonSessionService {
                 .heartsRemaining(STARTING_HEARTS)
                 .xpEarned(0)
                 .startedAt(LocalDateTime.now())
+                .selectedActivityIdsJson(selectedIdsJson)
                 .build());
 
-        progressRepository.findByUserIdAndLessonId(userId, lessonId).orElseGet(() ->
-                progressRepository.save(LearnerLessonProgress.builder()
-                        .userId(userId)
-                        .lesson(lesson)
-                        .progressStatus(ProgressStatus.IN_PROGRESS)
-                        .bestScore(0)
-                        .stars(0)
-                        .completionCount(0)
-                        .build()));
+        if (progress == null) {
+            progressRepository.save(LearnerLessonProgress.builder()
+                    .userId(userId)
+                    .lessonCode(lesson.getCode())
+                    .progressStatus(ProgressStatus.IN_PROGRESS)
+                    .bestScore(0)
+                    .stars(0)
+                    .completionCount(0)
+                    .build());
+        }
         return toView(session);
     }
 
@@ -92,7 +157,7 @@ public class LessonSessionService {
         if (!activity.getId().equals(request.activityId())) {
             throw new IllegalArgumentException("Attempt must target the current activity");
         }
-        if (attemptRepository.existsBySessionIdAndActivityId(sessionId, activity.getId())) {
+        if (activity.getId() > 0 && attemptRepository.existsBySessionIdAndActivityId(sessionId, activity.getId())) {
             throw new IllegalStateException("Activity has already been attempted in this session");
         }
 
@@ -107,15 +172,17 @@ public class LessonSessionService {
             session.setHeartsRemaining(Math.max(0, session.getHeartsRemaining() - 1));
         }
 
-        attemptRepository.save(ActivityAttempt.builder()
-                .session(session)
-                .activity(activity)
-                .submittedAnswerJson(writeJson(submitted))
-                .correct(correct)
-                .score(correct ? 100 : 0)
-                .feedback(correct ? "Chính xác!" : "Chưa đúng, mình sẽ ôn lại mục này sau nhé.")
-                .attemptedAt(LocalDateTime.now())
-                .build());
+        if (activity.getId() > 0) {
+            attemptRepository.save(ActivityAttempt.builder()
+                    .session(session)
+                    .activity(activity)
+                    .submittedAnswerJson(writeJson(submitted))
+                    .correct(correct)
+                    .score(correct ? 100 : 0)
+                    .feedback(correct ? "Chính xác!" : "Chưa đúng, mình sẽ ôn lại mục này sau nhé.")
+                    .attemptedAt(LocalDateTime.now())
+                    .build());
+        }
         sessionRepository.save(session);
 
         boolean canFinish = session.getCurrentActivityIndex() >= activities.size() || session.getHeartsRemaining() == 0;
@@ -139,26 +206,43 @@ public class LessonSessionService {
         session.setSessionStatus(SessionStatus.COMPLETED);
         session.setFinishedAt(LocalDateTime.now());
 
-        LearnerLessonProgress progress = progressRepository.findByUserIdAndLessonId(userId, session.getLesson().getId())
-                .orElseThrow();
-        boolean firstCompletion = progress.getProgressStatus() != ProgressStatus.COMPLETED;
-        progress.setProgressStatus(ProgressStatus.COMPLETED);
-        progress.setBestScore(Math.max(progress.getBestScore(), score));
-        progress.setStars(Math.max(progress.getStars(), stars));
-        progress.setCompletionCount(progress.getCompletionCount() + 1);
-        progress.setLastCompletedAt(LocalDateTime.now());
-        if (progress.getFirstCompletedAt() == null) {
-            progress.setFirstCompletedAt(LocalDateTime.now());
+        if (session.getLesson() != null) {
+            LearnerLessonProgress progress = progressRepository.findByUserIdAndLessonCode(userId, session.getLesson().getCode())
+                    .orElseThrow();
+            boolean firstCompletion = progress.getProgressStatus() != ProgressStatus.COMPLETED;
+            progress.setProgressStatus(ProgressStatus.COMPLETED);
+            progress.setBestScore(Math.max(progress.getBestScore(), score));
+            progress.setStars(Math.max(progress.getStars(), stars));
+            progress.setCompletionCount(progress.getCompletionCount() + 1);
+            progress.setLastCompletedAt(LocalDateTime.now());
+            if (progress.getFirstCompletedAt() == null) {
+                progress.setFirstCompletedAt(LocalDateTime.now());
+            }
+
+            if (firstCompletion) {
+                session.setXpEarned(session.getXpEarned() + session.getLesson().getXpReward());
+            }
         }
 
-        if (firstCompletion) {
-            session.setXpEarned(session.getXpEarned() + session.getLesson().getXpReward());
-        }
         userRepository.findById(userId).ifPresent(user -> {
             long current = user.getTotalScore() == null ? 0 : user.getTotalScore();
             user.setTotalScore(current + session.getXpEarned());
             userRepository.save(user);
         });
+
+        historyRepository.save(LearnerHistory.builder()
+                .userId(userId.toString())
+                .activityType(session.getLesson() != null ? ActivityType.UNIT_LEARNING : ActivityType.REVIEW)
+                .unitId(session.getLesson() != null ? session.getLesson().getLearningUnit().getId() : null)
+                .stats(new HashMap<>(Map.of(
+                        "score", score,
+                        "stars", stars,
+                        "correct", session.getCorrectAttempts(),
+                        "total", session.getTotalAttempts(),
+                        "xpEarned", session.getXpEarned()
+                )))
+                .timestamp(LocalDateTime.now())
+                .build());
 
         return new FinishResult(session.getId(), session.getCorrectAttempts(), session.getTotalAttempts(),
                 score, stars, session.getXpEarned(), session.getHeartsRemaining());
@@ -203,7 +287,8 @@ public class LessonSessionService {
                 activity.getId(), activity.getCode(), activity.getActivityType(), activity.getActivityStage(),
                 activity.getOrderIndex(), activity.getPromptText(), activity.getInstructionText(),
                 activity.getXpReward(), readJson(activity.getContentJson()))).toList();
-        return new SessionView(session.getId(), session.getLesson().getId(), session.getSessionStatus(),
+        Long lessonId = session.getLesson() != null ? session.getLesson().getId() : 99999L;
+        return new SessionView(session.getId(), lessonId, session.getSessionStatus(),
                 session.getCurrentActivityIndex(), session.getHeartsRemaining(), session.getCorrectAttempts(),
                 session.getTotalAttempts(), session.getXpEarned(), views);
     }
@@ -222,7 +307,24 @@ public class LessonSessionService {
     }
 
     private List<LearningActivity> activities(LessonSession session) {
-        return activityRepository.findByLessonIdOrderByOrderIndex(session.getLesson().getId());
+        if (session.getDynamicActivitiesJson() != null) {
+            try {
+                return objectMapper.readValue(session.getDynamicActivitiesJson(), new tools.jackson.core.type.TypeReference<List<LearningActivity>>(){});
+            } catch (Exception e) {
+                return List.of();
+            }
+        }
+        
+        List<LearningActivity> all = activityRepository.findByLessonIdOrderByOrderIndex(session.getLesson().getId());
+        if (session.getSelectedActivityIdsJson() != null) {
+            try {
+                List<Long> ids = objectMapper.readValue(session.getSelectedActivityIdsJson(), new tools.jackson.core.type.TypeReference<List<Long>>(){});
+                return all.stream().filter(a -> ids.contains(a.getId())).toList();
+            } catch (Exception e) {
+                // fallback
+            }
+        }
+        return all;
     }
 
     @SuppressWarnings("unchecked")

@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/auth")
+@RequestMapping("/api/auth")
 public class AuthController {
     private final AuthService authService;
 
@@ -26,19 +26,59 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<ServerResponse<AuthDto>> login(@RequestBody LoginRequest loginRequest) {
         AuthResponse response = this.authService.login(loginRequest);
-//        return ResponseEntity.ok(response);
         if (response.result()) {
             return ResponseEntity.ok(ServerResponse.success(response.authDto()));
         } else {
-            // Nếu thất bại (sai pass/user): Trả về lỗi 400 kèm câu thông báo từ service
             return ResponseEntity.badRequest()
                     .body(ServerResponse.error(400, response.message()));
         }
     }
 
     @PostMapping("/register")
-    public ResponseEntity<AuthResponse> register(@RequestBody RegisterRequest registerRequest) {
+    public ResponseEntity<ServerResponse<Object>> register(@RequestBody RegisterRequest registerRequest) {
         AuthResponse response = this.authService.register(registerRequest);
-        return ResponseEntity.ok(response);
+        if (response.result()) {
+            return ResponseEntity.ok(ServerResponse.success(null));
+        } else {
+            return ResponseEntity.badRequest()
+                    .body(ServerResponse.error(400, response.message()));
+        }
+    }
+
+    @PostMapping("/refresh")
+    public ResponseEntity<ServerResponse<AuthDto>> refresh(@RequestBody com.example.englishapp_server.dto.request.auth.RefreshTokenRequest request) {
+        AuthResponse response = this.authService.refresh(request);
+        if (response.result()) {
+            return ResponseEntity.ok(ServerResponse.success(response.authDto()));
+        } else {
+            return ResponseEntity.badRequest()
+                    .body(ServerResponse.error(400, response.message()));
+        }
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<ServerResponse<Object>> logout(@RequestBody com.example.englishapp_server.dto.request.auth.RefreshTokenRequest request) {
+        AuthResponse response = this.authService.logout(request);
+        if (response.result()) {
+            return ResponseEntity.ok(ServerResponse.success(null));
+        } else {
+            return ResponseEntity.badRequest()
+                    .body(ServerResponse.error(400, response.message()));
+        }
+    }
+
+    @PostMapping("/logout-all")
+    public ResponseEntity<ServerResponse<Object>> logoutAll(@RequestBody java.util.Map<String, String> body) {
+        String email = body.get("email");
+        if (email == null || email.isBlank()) {
+            return ResponseEntity.badRequest().body(ServerResponse.error(400, "Email is required"));
+        }
+        AuthResponse response = this.authService.logoutAll(email);
+        if (response.result()) {
+            return ResponseEntity.ok(ServerResponse.success(null));
+        } else {
+            return ResponseEntity.badRequest()
+                    .body(ServerResponse.error(400, response.message()));
+        }
     }
 }

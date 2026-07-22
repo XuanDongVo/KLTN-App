@@ -10,7 +10,7 @@ import java.util.UUID;
 import static com.example.englishapp_server.admin.AdminOperationsModels.*;
 
 @RestController
-@RequestMapping("/api/v1/admin")
+@RequestMapping("/api/admin")
 public class AdminOperationsController {
     private final AdminUserService userService;
     private final AdminMediaService mediaService;
@@ -47,10 +47,6 @@ public class AdminOperationsController {
         return ok(userService.updateStatus(UUID.fromString(adminUserId), userId, request));
     }
 
-    @PostMapping("/media/signature")
-    public ResponseEntity<?> mediaSignature(@RequestBody MediaSignatureRequest request) {
-        return ok(mediaService.signature(request));
-    }
 
     @PostMapping("/media")
     public ResponseEntity<?> registerMedia(@RequestAttribute("userId") String adminUserId,

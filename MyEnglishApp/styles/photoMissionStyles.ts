@@ -1,0 +1,33 @@
+import { Theme } from '@/constants/Theme';
+
+export const photoMissionStyles: any = {
+  container: { gap: 14 }, result: { alignItems: 'center', gap: 10 },
+  preview: { width: '100%', aspectRatio: 4 / 3, borderRadius: 8, backgroundColor: '#E8EEF2' },
+  placeholder: { width: '100%', aspectRatio: 4 / 3, borderRadius: 8, borderWidth: 2, borderStyle: 'dashed', borderColor: '#BFD9E8', backgroundColor: '#EFF9FE', alignItems: 'center', justifyContent: 'center', padding: 30, gap: 12 },
+  placeholderText: { color: Theme.colors.muted, textAlign: 'center', fontWeight: '700', lineHeight: 20 },
+  actions: { flexDirection: 'row', gap: 10 }, sourceButton: { flex: 1, minHeight: 64, borderWidth: 1, borderColor: Theme.colors.border, backgroundColor: '#FFFFFF', borderRadius: 8, alignItems: 'center', justifyContent: 'center', gap: 3 }, sourceLabel: { color: Theme.colors.ink, fontWeight: '800' },
+  loading: { minHeight: 52, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 9 }, loadingText: { color: Theme.colors.muted, fontWeight: '700' },
+  privacy: { color: Theme.colors.muted, fontSize: 11, textAlign: 'center', lineHeight: 16 }, captionIcon: { width: 52, height: 52, borderRadius: 26, backgroundColor: '#F0EDFF', alignItems: 'center', justifyContent: 'center', marginTop: -26 },
+  smallLabel: { color: Theme.colors.violet, fontSize: 11, fontWeight: '900' }, caption: { color: Theme.colors.ink, fontSize: 23, lineHeight: 30, fontWeight: '900', textAlign: 'center' }, translation: { color: Theme.colors.muted, marginBottom: 4 },
+  resultActions: { flexDirection: 'row', gap: 10, marginBottom: 10 },
+  listenCaption: { width: 52, height: 48, borderRadius: 8, backgroundColor: '#EAF7FE', borderWidth: 1, borderColor: '#B9E3F8', alignItems: 'center', justifyContent: 'center' },
+  saveCaption: { flex: 1, height: 48, borderRadius: 8, backgroundColor: '#F0EDFF', borderWidth: 1, borderColor: '#DED8FA', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
+  saveCaptionText: { color: Theme.colors.violet, fontWeight: '900' },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
+  modalContent: { backgroundColor: '#FFF', borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 20, paddingBottom: 40 },
+  modalTitle: { fontSize: 20, fontWeight: '900', color: Theme.colors.ink, marginBottom: 15 },
+  warningBox: { flexDirection: 'row', backgroundColor: '#EAF7FE', padding: 12, borderRadius: 8, gap: 10, alignItems: 'center', marginBottom: 20 },
+  warningText: { flex: 1, color: Theme.colors.blueDark, fontWeight: '700', fontSize: 13 },
+  vocabLabel: { fontSize: 15, fontWeight: '800', color: Theme.colors.ink, marginBottom: 10 },
+  vocabContainer: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 15 },
+  vocabChip: { flexDirection: 'row', backgroundColor: '#F5F5F5', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 20, alignItems: 'center', gap: 6 },
+  vocabChipText: { color: Theme.colors.ink, fontWeight: '700' },
+  addVocabRow: { flexDirection: 'row', gap: 10, marginBottom: 30 },
+  vocabInput: { flex: 1, height: 48, borderWidth: 1, borderColor: Theme.colors.border, borderRadius: 8, paddingHorizontal: 15, backgroundColor: '#F9F9F9' },
+  addVocabBtn: { width: 48, height: 48, backgroundColor: Theme.colors.violet, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
+  modalActions: { flexDirection: 'row', gap: 10 },
+  cancelBtn: { flex: 1, height: 50, backgroundColor: '#F5F5F5', borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
+  cancelBtnText: { color: Theme.colors.muted, fontWeight: '800' },
+  confirmBtn: { flex: 1, height: 50, backgroundColor: Theme.colors.violet, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
+  confirmBtnText: { color: '#FFF', fontWeight: '800' }
+};
