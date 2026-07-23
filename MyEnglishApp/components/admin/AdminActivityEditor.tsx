@@ -64,7 +64,7 @@ export function ActivityEditor({ initial, busy, onClose, onSave, lesson }: { ini
     <View style={{ marginTop: 8, marginBottom: 16, borderTopWidth: 1, borderColor: '#E5E9F0', paddingTop: 16 }}>
       {type === 'INTRO' && <IntroForm data={activityData} onChange={setActivityData} />}
       {type === 'FLASHCARD' && <FlashcardForm data={activityData} onChange={setActivityData} />}
-      {(type === 'LISTEN_CHOICE' || type === 'IMAGE_CHOICE') && <ChoiceForm data={activityData} onChange={setActivityData} />}
+      {(type === 'LISTEN_CHOICE' || type === 'IMAGE_CHOICE') && <ChoiceForm data={activityData} onChange={setActivityData} mediaPath={type === 'IMAGE_CHOICE' ? media.path : undefined} />}
       {type === 'TRUE_FALSE' && <TrueFalseForm data={activityData} onChange={setActivityData} />}
       {type === 'MATCH_PAIRS' && <MatchPairsForm data={activityData} onChange={setActivityData} />}
       {type === 'WORD_ORDER' && <WordOrderForm data={activityData} onChange={setActivityData} />}
