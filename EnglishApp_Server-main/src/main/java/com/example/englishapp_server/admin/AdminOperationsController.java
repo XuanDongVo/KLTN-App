@@ -48,6 +48,11 @@ public class AdminOperationsController {
     }
 
 
+    @PostMapping("/media/signature")
+    public ResponseEntity<?> signature(@RequestBody MediaSignatureRequest request) {
+        return ok(mediaService.signature(request));
+    }
+
     @PostMapping("/media")
     public ResponseEntity<?> registerMedia(@RequestAttribute("userId") String adminUserId,
                                            @RequestBody MediaAssetRequest request) {

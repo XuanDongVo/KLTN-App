@@ -300,22 +300,29 @@ public class AdminCurriculumService {
     @Transactional(readOnly = true)
     public VersionDeleteCheck checkVersionDelete(Long versionId) {
         CurriculumVersion version = requireVersion(versionId);
-        long sessions = sessionRepository.countByCurriculumVersionId(versionId);
-        long progressRows = progressRepository.countByCurriculumVersionId(versionId);
-        long attempts = attemptRepository.countByCurriculumVersionId(versionId);
-        boolean removableStatus = version.getLifecycleStatus() == LifecycleStatus.DRAFT
-                || version.getLifecycleStatus() == LifecycleStatus.ARCHIVED;
-        boolean canDelete = removableStatus && sessions == 0 && progressRows == 0 && attempts == 0;
+        boolean isDraft = version.getLifecycleStatus() == LifecycleStatus.DRAFT;
+        
+        long sessions = isDraft ? 0 : sessionRepository.countByCurriculumVersionId(versionId);
+        long progressRows = isDraft ? 0 : progressRepository.countByCurriculumVersionId(versionId);
+        long attempts = isDraft ? 0 : attemptRepository.countByCurriculumVersionId(versionId);
+        
+        boolean canDelete;
         String message;
+        
         if (version.getLifecycleStatus() == LifecycleStatus.PUBLISHED) {
+            canDelete = false;
             message = "Không thể xóa phiên bản đang xuất bản";
-        } else if (!canDelete) {
-            message = "Phiên bản còn dữ liệu học tập tham chiếu: " + sessions + " session, "
-                    + progressRows + " tiến độ, " + attempts + " lượt trả lời";
-        } else if (version.getLifecycleStatus() == LifecycleStatus.DRAFT) {
+        } else if (isDraft) {
+            canDelete = true;
             message = "Bản nháp có thể được hủy vĩnh viễn";
         } else {
-            message = "Bản lưu trữ không còn dữ liệu học tập tham chiếu và có thể xóa";
+            canDelete = sessions == 0 && progressRows == 0 && attempts == 0;
+            if (!canDelete) {
+                message = "Phiên bản còn dữ liệu học tập tham chiếu: " + sessions + " session, "
+                        + progressRows + " tiến độ, " + attempts + " lượt trả lời";
+            } else {
+                message = "Bản lưu trữ không còn dữ liệu học tập tham chiếu và có thể xóa";
+            }
         }
         return new VersionDeleteCheck(versionId, version.getVersionCode(), version.getLifecycleStatus(), canDelete,
                 sessions, progressRows, attempts, message);
