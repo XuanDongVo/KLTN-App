@@ -1,15 +1,43 @@
-import React from 'react';
-import { View, Text, Pressable, TextInput } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, Pressable, TextInput, Alert, ActivityIndicator } from 'react-native';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { Theme } from '@/constants/Theme';
 import { Field, IconButton, adminStyles } from '../AdminShared';
 import { styles } from './FormStyles';
+import { adminCurriculumService } from '@/services/adminCurriculumService';
 
-export function ChoiceForm({ data, onChange }: any) {
+export function ChoiceForm({ data, onChange, mediaPath }: any) {
   const options = data.options ?? [];
   const correctId = data.correctId ?? '';
+  const [generating, setGenerating] = useState(false);
+
+  const handleAIGenerate = async () => {
+    if (!mediaPath) return;
+    setGenerating(true);
+    try {
+      const res = await adminCurriculumService.generateImageCaption(mediaPath);
+      const newOptions = [{ id: 'a', label: res.caption }];
+      const distractors = res.objects.sort(() => 0.5 - Math.random()).slice(0, 3);
+      const chars = ['b', 'c', 'd'];
+      distractors.forEach((obj: string, idx: number) => {
+        if (chars[idx]) newOptions.push({ id: chars[idx], label: obj });
+      });
+      if (newOptions.length < 2) newOptions.push({ id: 'b', label: '' });
+      onChange({ ...data, options: newOptions, correctId: 'a' });
+    } catch (e: any) {
+      Alert.alert('Lỗi AI', e.message || 'Không thể tạo đáp án.');
+    } finally {
+      setGenerating(false);
+    }
+  };
   return <View>
-    <Text style={adminStyles.fieldLabel}>Các đáp án lựa chọn</Text>
+    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+      <Text style={adminStyles.fieldLabel}>Các đáp án lựa chọn</Text>
+      {mediaPath && <Pressable onPress={handleAIGenerate} disabled={generating} style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#E5F0FF', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 16 }}>
+        {generating ? <ActivityIndicator size="small" color={Theme.colors.blueDark} style={{ marginRight: 6 }} /> : <Text style={{ fontSize: 16, marginRight: 4 }}>✨</Text>}
+        <Text style={{ fontSize: 13, fontWeight: '600', color: Theme.colors.blueDark }}>{generating ? 'Đang tạo...' : 'AI Sinh Đáp Án'}</Text>
+      </Pressable>}
+    </View>
     {options.map((opt: any, i: number) => (
       <View key={i} style={styles.listItem}>
         <View style={styles.listHeader}>

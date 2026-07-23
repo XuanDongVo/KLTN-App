@@ -334,8 +334,16 @@ export function AdminCurriculumWorkspace() {
       </>}
     </ScrollView>
     {editor?.kind === 'version' && tree ? <VersionEditor initial={tree} busy={busy} onClose={() => setEditor(undefined)} onSave={(body) => execute(() => adminCurriculumService.updateVersion(tree.id, body))} /> : null}
-    {editor?.kind === 'unit' && tree ? <UnitEditor initial={editor.unit} fallbackMedia={tree.units[0]?.coverImage} busy={busy} onClose={() => setEditor(undefined)} onSave={(body) => execute(() => editor.unit ? adminCurriculumService.updateUnit(editor.unit.id, body) : adminCurriculumService.createUnit(tree.id, body))} /> : null}
-    {editor?.kind === 'lesson' ? <LessonEditor initial={editor.lesson} fallbackMedia={tree?.units.find((unit) => unit.id === editor.unitId)?.coverImage} busy={busy} onClose={() => setEditor(undefined)} onSave={(body) => execute(() => editor.lesson ? adminCurriculumService.updateLesson(editor.lesson.id, body) : adminCurriculumService.createLesson(editor.unitId, body))} /> : null}
+    {editor?.kind === 'unit' && tree ? (() => {
+      const programPrefix = tree.versionCode.split('_')[0] || 'APP';
+      const autoCode = `${programPrefix}_U${(tree.units.length + 1).toString().padStart(2, '0')}`;
+      return <UnitEditor initial={editor.unit} autoCode={autoCode} fallbackMedia={tree.units[0]?.coverImage} busy={busy} onClose={() => setEditor(undefined)} onSave={(body) => execute(() => editor.unit ? adminCurriculumService.updateUnit(editor.unit.id, body) : adminCurriculumService.createUnit(tree.id, body))} />;
+    })() : null}
+    {editor?.kind === 'lesson' && tree ? (() => {
+      const parentUnit = tree.units.find((unit) => unit.id === editor.unitId);
+      const autoCode = parentUnit ? `${parentUnit.code}_L${(parentUnit.lessons.length + 1).toString().padStart(2, '0')}` : '';
+      return <LessonEditor initial={editor.lesson} autoCode={autoCode} fallbackMedia={parentUnit?.coverImage} busy={busy} onClose={() => setEditor(undefined)} onSave={(body) => execute(() => editor.lesson ? adminCurriculumService.updateLesson(editor.lesson.id, body) : adminCurriculumService.createLesson(editor.unitId, body))} />;
+    })() : null}
     {editor?.kind === 'activity' && tree?.units.flatMap(u => u.lessons).find(l => l.id === editor.lessonId) ? <ActivityEditor lesson={tree.units.flatMap(u => u.lessons).find(l => l.id === editor.lessonId)!} initial={editor.activity} busy={busy} onClose={() => setEditor(undefined)} onSave={(body) => execute(() => editor.activity ? adminCurriculumService.updateActivity(editor.activity.id, body) : adminCurriculumService.createActivity(editor.lessonId, body))} /> : null}
     {editor?.kind === 'preview' ? <ActivityPreview activity={editor.activity} onClose={() => setEditor(undefined)} /> : null}
     {editor?.kind === 'deleteVersion' && tree ? <VersionDeleteEditor check={editor.check} busy={busy} onClose={() => setEditor(undefined)} onDelete={() => execute(async () => {
@@ -352,16 +360,16 @@ function VersionEditor({ initial, busy, onClose, onSave }: { initial: AdminCurri
   const validCode = isVersionCode(versionCode);
   return <EditorModal title="Thông tin phiên bản" onClose={onClose}><Field label="Mã phiên bản" placeholder="VD: STARTERS_2026.6" hint="Đổi mã DRAFT thành mã phát hành trước khi lưu hoặc xuất bản." error={versionCodeError(versionCode)} value={versionCode} onChangeText={setVersionCode} autoCapitalize="characters" /><Field label="Tên chương trình" placeholder="VD: Pre-A1 Starters" value={title} onChangeText={setTitle} /><Field label="Mô tả" value={description} onChangeText={setDescription} multiline /><ActionButton label="Lưu thay đổi" icon="content-save" disabled={busy || !validCode || !title.trim()} onPress={() => onSave({ versionCode: versionCode.trim(), title: title.trim(), description: description.trim() })} /></EditorModal>;
 }
-function UnitEditor({ initial, fallbackMedia, busy, onClose, onSave }: { initial?: AdminUnit; fallbackMedia?: BackendMedia; busy: boolean; onClose: () => void; onSave: (body: UnitRequest) => void }) {
-  const [code, setCode] = useState(initial?.code ?? '');
+function UnitEditor({ initial, autoCode, fallbackMedia, busy, onClose, onSave }: { initial?: AdminUnit; autoCode?: string; fallbackMedia?: BackendMedia; busy: boolean; onClose: () => void; onSave: (body: UnitRequest) => void }) {
+  const [code, setCode] = useState(initial?.code ?? autoCode ?? 'U_' + Math.random().toString(36).substring(2, 8).toUpperCase());
   const [title, setTitle] = useState(initial?.title ?? '');
   const [description, setDescription] = useState(initial?.description ?? '');
   const [media, setMedia] = useState<BackendMedia>(initial?.coverImage ?? (initial ? fallbackMedia : undefined) ?? defaultMedia());
   const valid = isContentCode(code) && Boolean(title.trim()) && isValidMedia(media);
   return <EditorModal title={initial ? 'Sửa unit' : 'Thêm unit'} onClose={onClose}><Field label="Mã unit" placeholder="VD: STARTERS_U06" error={contentCodeError(code)} value={code} onChangeText={setCode} autoCapitalize="characters" /><Field label="Tên unit" placeholder="VD: Thiên nhiên quanh em" value={title} onChangeText={setTitle} /><Field label="Mô tả" placeholder="Mục tiêu và chủ đề chính của unit" value={description} onChangeText={setDescription} multiline /><AdminImageField value={media} onChange={setMedia} /><ActionButton label={initial ? 'Lưu unit' : 'Tạo unit'} icon="content-save" disabled={busy || !valid} onPress={() => onSave({ code: code.trim(), title: title.trim(), description: description.trim(), coverImage: media })} /></EditorModal>;
 }
-function LessonEditor({ initial, fallbackMedia, busy, onClose, onSave }: { initial?: AdminLesson; fallbackMedia?: BackendMedia; busy: boolean; onClose: () => void; onSave: (body: LessonRequest) => void }) {
-  const [code, setCode] = useState(initial?.code ?? '');
+function LessonEditor({ initial, autoCode, fallbackMedia, busy, onClose, onSave }: { initial?: AdminLesson; autoCode?: string; fallbackMedia?: BackendMedia; busy: boolean; onClose: () => void; onSave: (body: LessonRequest) => void }) {
+  const [code, setCode] = useState(initial?.code ?? autoCode ?? 'L_' + Math.random().toString(36).substring(2, 8).toUpperCase());
   const [title, setTitle] = useState(initial?.title ?? '');
   const [objective, setObjective] = useState(initial?.objective ?? '');
   const [minutes, setMinutes] = useState(initial ? String(initial.estimatedMinutes) : '');

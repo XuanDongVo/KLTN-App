@@ -42,4 +42,5 @@ export const adminCurriculumService = {
   reorderActivities: (lessonId: number, orderedIds: number[]) => request<AdminCurriculumTree>(`/api/admin/curriculum/lessons/${lessonId}/activities/reorder`, json('POST', { orderedIds })),
   validate: (versionId: number) => request<ValidationReport>(`/api/admin/curriculum/versions/${versionId}/validate`, json('POST')),
   publish: (versionId: number) => request<AdminCurriculumTree>(`/api/admin/curriculum/versions/${versionId}/publish`, json('POST')),
+  generateImageCaption: (imageUrl: string) => request<{ caption: string; objects: string[]; confidence: number }>(`/api/admin/curriculum/ai/image-caption`, json('POST', { imageUrl })),
 };

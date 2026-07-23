@@ -76,14 +76,29 @@ public class AdminCurriculumService {
                 .findFirstByLevelCodeAndLifecycleStatusOrderByImportedAtDesc(levelCode, LifecycleStatus.PUBLISHED)
                 .orElseThrow(() -> new NoSuchElementException("Không tìm thấy chương trình đã xuất bản để tạo bản nháp"));
 
-        String versionCode = textOrDefault(request == null ? null : request.versionCode(),
-                levelPrefix(levelCode) + "_DRAFT_" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss")));
+        String publishedCode = published.getVersionCode();
+        String newCode = publishedCode;
+        if (publishedCode.matches(".*\\.\\d+")) {
+            int lastDot = publishedCode.lastIndexOf('.');
+            try {
+                int rev = Integer.parseInt(publishedCode.substring(lastDot + 1));
+                newCode = publishedCode.substring(0, lastDot + 1) + (rev + 1);
+            } catch (NumberFormatException ignored) {}
+        } else {
+            newCode = publishedCode + ".2";
+        }
+        
+        String versionCode = textOrDefault(request == null ? null : request.versionCode(), newCode + "_DRAFT");
         requireUniqueVersionCode(versionCode, null);
 
+        String defaultTitle = published.getTitle();
+        if (!defaultTitle.endsWith(" - Bản nháp")) {
+            defaultTitle += " - Bản nháp";
+        }
         CurriculumVersion draft = versionRepository.save(CurriculumVersion.builder()
                 .levelCode(levelCode)
                 .versionCode(versionCode)
-                .title(textOrDefault(request == null ? null : request.title(), published.getTitle() + " - Bản nháp"))
+                .title(textOrDefault(request == null ? null : request.title(), defaultTitle))
                 .description(textOrDefault(request == null ? null : request.description(), published.getDescription()))
                 .lifecycleStatus(LifecycleStatus.DRAFT)
                 .checksum(sha256("draft:" + versionCode))
@@ -363,6 +378,13 @@ public class AdminCurriculumService {
             published.setLifecycleStatus(LifecycleStatus.ARCHIVED);
             versionRepository.save(published);
         }
+        
+        String finalCode = draft.getVersionCode().replaceFirst("_DRAFT.*", "");
+        if (!finalCode.equals(draft.getVersionCode())) {
+            requireUniqueVersionCode(finalCode, versionId);
+            draft.setVersionCode(finalCode);
+        }
+        
         draft.setLifecycleStatus(LifecycleStatus.PUBLISHED);
         draft.setImportedAt(LocalDateTime.now());
         draft.setChecksum(sha256(writeJson(tree(draft))));
