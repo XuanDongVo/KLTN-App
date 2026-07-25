@@ -10,6 +10,7 @@ import { Theme } from '@/constants/Theme';
 import { useLearning } from '@/context/LearningContext';
 import { logoutApi, logoutAllApi } from '@/services/authService';
 import { Alert } from 'react-native';
+import { styles } from './settings.styles';
 
 export default function SettingsScreen() {
   const router = useRouter();
@@ -115,37 +116,3 @@ export default function SettingsScreen() {
     </Modal>
   </SafeAreaView>;
 }
-
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Theme.colors.background },
-  content: { flexGrow: 1, width: '100%', maxWidth: 680, alignSelf: 'center', padding: 20, paddingBottom: 45 },
-  eyebrow: { color: Theme.colors.greenDark, fontSize: 11, fontWeight: '900', marginTop: 8 },
-  title: { color: Theme.colors.ink, fontSize: 30, fontWeight: '900', marginTop: 3 },
-  subtitle: { color: Theme.colors.muted, fontSize: 15, lineHeight: 21, marginTop: 5 },
-  sectionTitle: { color: Theme.colors.ink, fontSize: 16, fontWeight: '900', marginTop: 28, marginBottom: 9 },
-  accountPanel: { minHeight: 84, flexDirection: 'row', alignItems: 'center', gap: 12, padding: 13, borderWidth: 1, borderColor: Theme.colors.border, borderRadius: 8, backgroundColor: '#FFFFFF' },
-  avatar: { width: 54, height: 54, borderRadius: 27, alignItems: 'center', justifyContent: 'center', backgroundColor: '#EAF7FE' },
-  accountCopy: { flex: 1 },
-  accountTitle: { color: Theme.colors.ink, fontSize: 16, fontWeight: '900' },
-  syncRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 5 },
-  syncDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: Theme.colors.green },
-  accountSubtitle: { flex: 1, color: Theme.colors.muted, fontSize: 12, fontWeight: '700' },
-  logoutRow: { minHeight: 78, flexDirection: 'row', alignItems: 'center', gap: 12, padding: 12, borderWidth: 1, borderBottomWidth: 3, borderColor: '#FFD0CD', borderRadius: 8, backgroundColor: '#FFFFFF' },
-  rowPressed: { transform: [{ translateY: 2 }], borderBottomWidth: 1 },
-  logoutIcon: { width: 48, height: 48, borderRadius: 8, alignItems: 'center', justifyContent: 'center', backgroundColor: '#FFF0EF' },
-  logoutCopy: { flex: 1 },
-  logoutTitle: { color: Theme.colors.coralDark, fontSize: 16, fontWeight: '900' },
-  logoutSubtitle: { color: Theme.colors.muted, fontSize: 12, marginTop: 3 },
-  note: { flexDirection: 'row', alignItems: 'flex-start', gap: 9, paddingVertical: 18 },
-  noteText: { flex: 1, color: Theme.colors.muted, fontSize: 12, lineHeight: 18 },
-  errorBanner: { minHeight: 48, flexDirection: 'row', alignItems: 'center', gap: 8, padding: 10, borderRadius: 8, backgroundColor: '#FFF0EF' },
-  errorText: { flex: 1, color: Theme.colors.coralDark, fontWeight: '700' },
-  modalOverlay: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 22, backgroundColor: 'rgba(28,45,52,0.48)' },
-  modalPanel: { width: '100%', maxWidth: 420, padding: 20, borderRadius: 8, backgroundColor: '#FFFFFF', ...Theme.shadow },
-  modalIcon: { width: 58, height: 58, borderRadius: 29, alignSelf: 'center', alignItems: 'center', justifyContent: 'center', backgroundColor: '#FFF0EF' },
-  modalTitle: { color: Theme.colors.ink, fontSize: 21, fontWeight: '900', textAlign: 'center', marginTop: 14 },
-  modalText: { color: Theme.colors.muted, lineHeight: 21, textAlign: 'center', marginTop: 7, marginBottom: 20 },
-  modalError: { color: Theme.colors.coralDark, fontWeight: '700', textAlign: 'center', marginBottom: 14 },
-  cancelButton: { minHeight: 48, alignItems: 'center', justifyContent: 'center', marginTop: 5 },
-  cancelText: { color: Theme.colors.blueDark, fontWeight: '900' },
-});

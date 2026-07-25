@@ -1,5 +1,6 @@
 import { StyleSheet, Text, TouchableOpacity } from 'react-native';
 import { AppColors } from '../../constants/Colors';
+import { styles } from './CustomButton.styles';
 
 interface Props {
   title: string;
@@ -23,24 +24,3 @@ export const CustomButton = ({ title, onPress, type = 'primary', bgColor }: Prop
     </TouchableOpacity>
   );
 };
-
-const styles = StyleSheet.create({
-  btn: {
-    height: 55,
-    borderRadius: 15,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 12,
-    width: '100%',
-  },
-  outline: {
-    borderWidth: 2,
-    borderColor: AppColors.border,
-  },
-  text: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
-    letterSpacing: 1,
-  }
-});

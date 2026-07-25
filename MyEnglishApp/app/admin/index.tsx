@@ -8,6 +8,7 @@ import { adminCurriculumService } from '@/services/adminCurriculumService';
 import { adminOperationsService } from '@/services/adminOperationsService';
 import type { AdminLevelOverview } from '@/types/adminCurriculum';
 import type { AdminDashboard } from '@/types/adminOperations';
+import { styles } from './index.styles';
 
 export default function AdminDashboardScreen() {
   const router = useRouter();
@@ -89,59 +90,3 @@ function auditLabel(action: string) {
 }
 
 function formatDate(value: string) { return new Date(value).toLocaleString('vi-VN', { dateStyle: 'short', timeStyle: 'short' }); }
-
-const styles = StyleSheet.create({
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: Theme.colors.background },
-  content: { padding: 20, paddingBottom: 50, maxWidth: 1120, width: '100%', alignSelf: 'center' },
-  heading: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', gap: 16, flexWrap: 'wrap' },
-  headingCopy: { flex: 1, minWidth: 250 },
-  headingActions: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  eyebrow: { color: Theme.colors.greenDark, fontSize: 11, fontWeight: '900' },
-  title: { color: Theme.colors.ink, fontSize: 28, fontWeight: '900', marginTop: 3 },
-  subtitle: { color: Theme.colors.muted, marginTop: 4 },
-  primary: { minHeight: 48, borderRadius: 7, borderBottomWidth: 4, borderBottomColor: Theme.colors.greenDark, backgroundColor: Theme.colors.green, flexDirection: 'row', alignItems: 'center', gap: 7, paddingHorizontal: 15 },
-  primaryText: { color: '#FFFFFF', fontWeight: '900' },
-  secondary: { minHeight: 48, borderRadius: 7, borderWidth: 1, borderBottomWidth: 3, borderColor: Theme.colors.border, backgroundColor: '#FFFFFF', flexDirection: 'row', alignItems: 'center', gap: 7, paddingHorizontal: 14 },
-  secondaryText: { color: Theme.colors.ink, fontWeight: '900' },
-  error: { minHeight: 56, flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 16, borderWidth: 1, borderColor: '#FFD0CD', borderRadius: 8, backgroundColor: '#FFF0EF', padding: 11 },
-  errorText: { color: Theme.colors.coralDark, fontWeight: '700' },
-  stats: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginTop: 24 },
-  stat: { minWidth: 160, flex: 1, minHeight: 126, borderWidth: 1, borderColor: Theme.colors.border, borderRadius: 8, backgroundColor: '#FFFFFF', padding: 15 },
-  statIcon: { width: 44, height: 44, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
-  statValue: { color: Theme.colors.ink, fontSize: 27, fontWeight: '900', marginTop: 8 },
-  statLabel: { color: Theme.colors.muted, fontWeight: '700', fontSize: 12 },
-  curriculumBand: { minHeight: 66, marginTop: 12, borderWidth: 1, borderColor: '#CBE8F5', borderRadius: 8, backgroundColor: '#EDF9FE', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10, padding: 12 },
-  bandTitle: { color: Theme.colors.ink, fontWeight: '900' },
-  bandMeta: { color: Theme.colors.muted, fontSize: 11, marginTop: 3 },
-  mediaLink: { minHeight: 40, flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 10 },
-  mediaLinkText: { color: Theme.colors.blueDark, fontWeight: '900', fontSize: 11 },
-  sectionHeading: { minHeight: 70, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginTop: 12 },
-  sectionTitle: { color: Theme.colors.ink, fontSize: 18, fontWeight: '900' },
-  sectionMeta: { color: Theme.colors.muted, fontSize: 11 },
-  levelList: { borderWidth: 1, borderColor: Theme.colors.border, borderRadius: 8, backgroundColor: '#FFFFFF', overflow: 'hidden' },
-  levelRow: { minHeight: 88, flexDirection: 'row', alignItems: 'center', gap: 12, padding: 13, borderBottomWidth: 1, borderBottomColor: Theme.colors.border },
-  levelRowCompact: { alignItems: 'stretch', flexDirection: 'column', gap: 7 },
-  levelMain: { flex: 1, minWidth: 0, flexDirection: 'row', alignItems: 'center', gap: 12 },
-  levelIcon: { width: 54, height: 54, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
-  levelCopy: { flex: 1, minWidth: 0 },
-  levelTitle: { color: Theme.colors.ink, fontSize: 16, fontWeight: '900' },
-  levelMeta: { color: Theme.colors.muted, fontSize: 11, marginTop: 4 },
-  versionCopy: { alignItems: 'flex-end', gap: 5 },
-  versionCopyCompact: { minHeight: 24, flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', paddingLeft: 66 },
-  versionCode: { color: Theme.colors.ink, fontSize: 10, fontWeight: '900' },
-  draftBadge: { borderRadius: 5, backgroundColor: '#FFF5CE', paddingHorizontal: 7, paddingVertical: 4 },
-  draftText: { color: Theme.colors.yellowDark, fontSize: 8, fontWeight: '900' },
-  publishedBadge: { borderRadius: 5, backgroundColor: '#E6F8E9', paddingHorizontal: 7, paddingVertical: 4 },
-  publishedText: { color: Theme.colors.greenDark, fontSize: 8, fontWeight: '900' },
-  auditList: { borderWidth: 1, borderColor: Theme.colors.border, borderRadius: 8, backgroundColor: '#FFFFFF', overflow: 'hidden' },
-  auditRow: { minHeight: 62, flexDirection: 'row', alignItems: 'center', gap: 9, borderBottomWidth: 1, borderBottomColor: Theme.colors.border, padding: 10 },
-  auditIcon: { width: 38, height: 38, borderRadius: 7, backgroundColor: '#EAF7FE', alignItems: 'center', justifyContent: 'center' },
-  auditCopy: { flex: 1, minWidth: 0 },
-  auditTitle: { color: Theme.colors.ink, fontSize: 12, fontWeight: '900' },
-  auditMeta: { color: Theme.colors.muted, fontSize: 10, marginTop: 3 },
-  emptyAudit: { color: Theme.colors.muted, textAlign: 'center', padding: 22 },
-  notice: { marginTop: 16, borderRadius: 8, backgroundColor: '#EAF7FE', borderWidth: 1, borderColor: '#C8E8F8', padding: 14, flexDirection: 'row', alignItems: 'center', gap: 10 },
-  noticeCopy: { flex: 1 },
-  noticeTitle: { color: Theme.colors.ink, fontWeight: '900' },
-  noticeText: { color: Theme.colors.muted, fontSize: 12, lineHeight: 17, marginTop: 2 },
-});

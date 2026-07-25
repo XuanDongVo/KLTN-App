@@ -4,6 +4,7 @@ import com.example.englishapp_server.common.enums.AccountStatus;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -28,6 +29,28 @@ public class User {
     private String avatarUrl;
 
     private Long totalScore;
+
+    @Builder.Default
+    @Column(name = "daily_goal")
+    private Integer dailyGoal = 20;
+
+    @Builder.Default
+    @Column(name = "daily_xp")
+    private Integer dailyXp = 0;
+
+    @Builder.Default
+    @Column(name = "streak")
+    private Integer streak = 0;
+
+    @Builder.Default
+    @Column(name = "hearts")
+    private Integer hearts = 5;
+
+    @Column(name = "last_active_date")
+    private LocalDate lastActiveDate;
+
+    @Column(name = "last_streak_date")
+    private LocalDate lastStreakDate;
 
     @Builder.Default
     @Column(name = "role", nullable = false)

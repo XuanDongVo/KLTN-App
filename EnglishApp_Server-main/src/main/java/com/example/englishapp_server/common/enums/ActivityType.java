@@ -6,5 +6,6 @@ public enum ActivityType {
     REVIEW,
     UNIT_LEARNING,
     AI_CAMERA,
-    PHOTO_MISSION
+    PHOTO_MISSION,
+    DAILY_GOAL_REACHED
 }

@@ -1,0 +1,31 @@
+import { StyleSheet } from 'react-native';
+import { Theme } from '@/constants/Theme';
+
+export const styles = StyleSheet.create({
+  safe: { flex: 1, backgroundColor: Theme.colors.background },
+  header: { flexDirection: 'row', alignItems: 'center', padding: 16, borderBottomWidth: 1, borderBottomColor: Theme.colors.border },
+  backButton: { marginRight: 16 },
+  headerTitle: { fontSize: 20, fontWeight: '700', color: Theme.colors.ink },
+  content: { padding: 16, paddingBottom: 40 },
+  dateFilter: { flexDirection: 'row', gap: 12, marginBottom: 24 },
+  dateLabel: { fontSize: 13, fontWeight: '600', color: Theme.colors.muted, marginBottom: 4 },
+  dateBtn: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFFFF', padding: 12, borderRadius: 8, borderWidth: 1, borderColor: Theme.colors.border, gap: 8 },
+  dateText: { fontSize: 15, color: Theme.colors.ink, fontWeight: '500' },
+  chartContainer: { backgroundColor: '#FFFFFF', borderRadius: 16, padding: 16, borderWidth: 1, borderColor: Theme.colors.border, marginBottom: 24, ...Theme.shadow },
+  chart: { flexDirection: 'row', alignItems: 'flex-end', height: 200, gap: 16 },
+  barContainer: { alignItems: 'center', width: 36 },
+  bar: { width: 24, backgroundColor: Theme.colors.green, borderRadius: 6, marginVertical: 8 },
+  barLabel: { fontSize: 11, color: Theme.colors.greenDark, fontWeight: '700' },
+  dayLabel: { fontSize: 12, color: Theme.colors.muted, fontWeight: '500' },
+  sectionTitle: { fontSize: 18, fontWeight: '800', color: Theme.colors.ink, marginBottom: 16 },
+  emptyText: { textAlign: 'center', color: Theme.colors.muted, marginTop: 24 },
+  historyList: { gap: 12 },
+  historyItem: { flexDirection: 'row', backgroundColor: '#FFFFFF', padding: 16, borderRadius: 12, borderWidth: 1, borderColor: Theme.colors.border, alignItems: 'center' },
+  historyIcon: { width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center', marginRight: 16 },
+  historyContent: { flex: 1 },
+  historyTitle: { fontSize: 16, fontWeight: '700', color: Theme.colors.ink },
+  historyTime: { fontSize: 13, color: Theme.colors.muted, marginTop: 2 },
+  historyDetail: { fontSize: 13, color: Theme.colors.ink, fontWeight: '500' },
+  historyXp: { alignItems: 'flex-end' },
+  historyXpText: { fontSize: 16, fontWeight: '800', color: Theme.colors.yellowDark },
+});

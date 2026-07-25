@@ -38,7 +38,8 @@
           "microphonePermission": "Cho phép Fun English dùng micro để con luyện phát âm tiếng Anh.",
           "recordAudioAndroid": true
         }
-      ]
+      ],
+      "@react-native-community/datetimepicker"
     ]
   }
 }

@@ -2,6 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 
 import { LearnerState, LessonResult } from '@/types/learning';
+import { request, ServerResponse } from '@/services/apiClient';
 
 const STORAGE_KEY = '@fun-english/learner-state-v2';
 const initialState: LearnerState = {
@@ -30,8 +31,25 @@ export function LearningProvider({ children }: React.PropsWithChildren) {
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    AsyncStorage.getItem(STORAGE_KEY)
-      .then((value) => value && setState({ ...initialState, ...JSON.parse(value) }))
+    Promise.all([
+      AsyncStorage.getItem(STORAGE_KEY),
+      request<ServerResponse<any>>('/api/learner/profile').catch(() => null)
+    ])
+      .then(([localValue, profileResponse]) => {
+        let newState = { ...initialState };
+        if (localValue) {
+          newState = { ...newState, ...JSON.parse(localValue) };
+        }
+        if (profileResponse?.data) {
+          const profile = profileResponse.data;
+          newState.xp = profile.totalScore || 0;
+          newState.dailyGoal = profile.dailyGoal || 20;
+          newState.dailyXp = profile.dailyXp || 0;
+          newState.streak = profile.streak || 0;
+          newState.hearts = profile.hearts ?? 5;
+        }
+        setState(newState);
+      })
       .catch(() => undefined)
       .finally(() => setReady(true));
   }, []);
@@ -47,10 +65,15 @@ export function LearningProvider({ children }: React.PropsWithChildren) {
     const completedLessonIds = state.completedLessonIds.includes(result.lessonId)
       ? state.completedLessonIds
       : [...state.completedLessonIds, result.lessonId];
+    const newDailyXp = state.dailyXp + xpDelta;
+    const newStreak = state.dailyXp < state.dailyGoal && newDailyXp >= state.dailyGoal 
+      ? state.streak + 1 : state.streak;
+    
     await persist({
       ...state,
       xp: state.xp + xpDelta,
-      dailyXp: state.dailyXp + xpDelta,
+      dailyXp: newDailyXp,
+      streak: newStreak,
       completedLessonIds,
       results: { ...state.results, [result.lessonId]: result },
       mistakeActivityIds: [...new Set([...state.mistakeActivityIds, ...result.mistakes])],

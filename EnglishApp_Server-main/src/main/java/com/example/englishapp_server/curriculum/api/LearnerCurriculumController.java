@@ -5,14 +5,20 @@ import com.example.englishapp_server.curriculum.domain.LevelCode;
 import com.example.englishapp_server.curriculum.service.LearnerCurriculumService;
 import com.example.englishapp_server.curriculum.service.LessonSessionService;
 import com.example.englishapp_server.curriculum.service.ReviewSessionService;
+import com.example.englishapp_server.document.LearnerHistory;
 import com.example.englishapp_server.service.ImageCaptionService;
+import com.example.englishapp_server.service.LearnerProfileService;
+import com.example.englishapp_server.dto.response.learner.LearnerProfileResponse;
 import com.example.englishapp_server.dto.response.ServerResponse;
+import com.example.englishapp_server.repository.mongo.LearnerHistoryRepository;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import com.example.englishapp_server.entity.User;
 
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -22,20 +28,48 @@ public class LearnerCurriculumController {
     private final LessonSessionService sessionService;
     private final ImageCaptionService imageCaptionService;
     private final ReviewSessionService reviewSessionService;
+    private final LearnerProfileService profileService;
+    private final LearnerHistoryRepository historyRepository;
 
     public LearnerCurriculumController(LearnerCurriculumService curriculumService,
                                        LessonSessionService sessionService,
                                        ImageCaptionService imageCaptionService,
-                                       ReviewSessionService reviewSessionService) {
+                                       ReviewSessionService reviewSessionService,
+                                       LearnerProfileService profileService,
+                                       LearnerHistoryRepository historyRepository) {
         this.curriculumService = curriculumService;
         this.sessionService = sessionService;
         this.imageCaptionService = imageCaptionService;
         this.reviewSessionService = reviewSessionService;
+        this.profileService = profileService;
+        this.historyRepository = historyRepository;
     }
 
     @GetMapping("/learner/levels")
     public ResponseEntity<?> levels(@RequestAttribute("userId") String userId) {
         return ResponseEntity.ok(ServerResponse.success(curriculumService.getLevels(UUID.fromString(userId))));
+    }
+
+    @GetMapping("/learner/profile")
+    public ResponseEntity<?> profile(@RequestAttribute("userId") String userId) {
+        User user = profileService.getProfileAndRefresh(UUID.fromString(userId));
+        return ResponseEntity.ok(ServerResponse.success(LearnerProfileResponse.builder()
+                .totalScore(user.getTotalScore() != null ? user.getTotalScore() : 0)
+                .dailyGoal(user.getDailyGoal())
+                .dailyXp(user.getDailyXp())
+                .streak(user.getStreak())
+                .hearts(user.getHearts())
+                .build()));
+    }
+
+    @GetMapping("/learner/history")
+    public ResponseEntity<?> history(
+            @RequestAttribute("userId") String userId,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) java.time.LocalDateTime startDate,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) java.time.LocalDateTime endDate) {
+        
+        List<LearnerHistory> history = historyRepository.findByUserIdAndTimestampBetweenOrderByTimestampDesc(userId, startDate, endDate);
+        return ResponseEntity.ok(ServerResponse.success(history));
     }
 
     @GetMapping("/learner/path")

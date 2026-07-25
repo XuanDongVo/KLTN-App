@@ -1,5 +1,6 @@
 import React from 'react';
 import { ScrollView, StyleProp, StyleSheet, useWindowDimensions, View, ViewStyle } from 'react-native';
+import { styles } from './ResponsiveWrapper.styles';
 
 interface ResponsiveWrapperProps {
   children: React.ReactNode;
@@ -49,12 +50,3 @@ export default function ResponsiveWrapper({
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  scrollContent: { flexGrow: 1, width: '100%' },
-  fixedContent: { flex: 1, width: '100%' },
-  innerContent: { width: '100%', flex: 1 },
-  baseContainer: { flex: 1 },
-  mobilePadding: { padding: 15 },
-  desktopPadding: { padding: 25 }
-});

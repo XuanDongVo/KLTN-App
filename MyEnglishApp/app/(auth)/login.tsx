@@ -8,6 +8,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { ActionButton } from '@/components/ui/ActionButton';
 import { Theme } from '@/constants/Theme';
 import { loginApi } from '@/services/authService';
+import { styles } from './login.styles';
 
 const greetingImage = require('@/assets/images/lessons/greetings.png');
 
@@ -105,32 +106,3 @@ export default function LoginScreen() {
     </KeyboardAvoidingView>
   </SafeAreaView>;
 }
-
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#FFFFFF' },
-  flex: { flex: 1 },
-  content: { flexGrow: 1, width: '100%', maxWidth: 520, alignSelf: 'center', paddingHorizontal: 22, paddingBottom: 30 },
-  topBar: { minHeight: 62, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  iconButton: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
-  iconPlaceholder: { width: 44 },
-  brand: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  brandText: { color: Theme.colors.ink, fontSize: 13, fontWeight: '900' },
-  artwork: { height: 170, alignItems: 'center', justifyContent: 'center', borderRadius: 8, backgroundColor: '#EAF7FE', overflow: 'hidden' },
-  artworkImage: { width: '100%', height: '100%' },
-  title: { color: Theme.colors.ink, fontSize: 28, fontWeight: '900', textAlign: 'center', marginTop: 18 },
-  subtitle: { color: Theme.colors.muted, lineHeight: 21, textAlign: 'center', marginTop: 5, marginBottom: 20 },
-  successBanner: { minHeight: 58, flexDirection: 'row', alignItems: 'center', gap: 9, padding: 11, borderWidth: 1, borderColor: '#B8EAC0', borderRadius: 8, backgroundColor: '#EEF9F0', marginBottom: 18 },
-  successText: { flex: 1, color: Theme.colors.greenDark, fontWeight: '800', lineHeight: 19 },
-  infoBanner: { minHeight: 54, flexDirection: 'row', alignItems: 'center', gap: 9, padding: 11, borderWidth: 1, borderColor: '#B9E3F8', borderRadius: 8, backgroundColor: '#EAF7FE', marginBottom: 18 },
-  infoText: { flex: 1, color: Theme.colors.blueDark, fontWeight: '800', lineHeight: 19 },
-  label: { color: Theme.colors.ink, fontWeight: '800', marginBottom: 7 },
-  inputShell: { minHeight: 56, flexDirection: 'row', alignItems: 'center', gap: 8, borderWidth: 2, borderColor: Theme.colors.border, borderRadius: 8, backgroundColor: '#FFFFFF', paddingHorizontal: 13, marginBottom: 15 },
-  input: { flex: 1, minHeight: 52, color: Theme.colors.ink, fontSize: 16 },
-  passwordToggle: { width: 40, height: 44, alignItems: 'center', justifyContent: 'center' },
-  errorBanner: { minHeight: 48, flexDirection: 'row', alignItems: 'center', gap: 8, padding: 10, borderRadius: 8, backgroundColor: '#FFF0EF', marginBottom: 12 },
-  error: { flex: 1, color: Theme.colors.coralDark, fontWeight: '700', lineHeight: 19 },
-  submit: { minHeight: 56, justifyContent: 'center' },
-  switchButton: { minHeight: 50, alignItems: 'center', justifyContent: 'center', marginTop: 5 },
-  switchText: { color: Theme.colors.muted, fontWeight: '700' },
-  switchStrong: { color: Theme.colors.blueDark, fontWeight: '900' },
-});
