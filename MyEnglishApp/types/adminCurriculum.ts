@@ -1,6 +1,6 @@
 import type { BackendActivityType, BackendLevelCode, BackendMedia } from '@/types/backendCurriculum';
 
-export type CurriculumLifecycle = 'DRAFT' | 'PUBLISHED' | 'ARCHIVED';
+export type CurriculumLifecycle = 'DRAFT' | 'PENDING' | 'REJECTED' | 'PUBLISHED' | 'ARCHIVED';
 export type ActivityStage = 'LEARN' | 'PRACTISE' | 'CHECK';
 
 export type AdminVersionCard = {

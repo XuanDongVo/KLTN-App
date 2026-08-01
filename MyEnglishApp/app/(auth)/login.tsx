@@ -39,6 +39,8 @@ export default function LoginScreen() {
       
       if (response.data.role === 'ADMIN') {
         router.replace('/admin');
+      } else if (response.data.role === 'CONTRIBUTOR') {
+        router.replace('/contributor');
       } else {
         try {
           const currentChallenge = await challengeService.getCurrentChallenge();

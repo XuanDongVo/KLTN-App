@@ -1,15 +1,14 @@
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useFocusEffect, useRouter } from 'expo-router';
 import React, { useCallback, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { Theme } from '@/constants/Theme';
 import { useLearning } from '@/context/LearningContext';
 import { curriculumService } from '@/services/curriculumService';
 import { styles } from '@/styles/(tabs)/profile.styles';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-
 export default function ProfileScreen() {
   const router = useRouter();
   const { state } = useLearning();
@@ -35,8 +34,12 @@ export default function ProfileScreen() {
       <Pressable onPress={() => router.push('/(screens)/settings')} style={{ position: 'absolute', top: 16, right: 16, zIndex: 10 }}>
         <MaterialCommunityIcons name="cog" size={28} color={Theme.colors.muted} />
       </Pressable>
-      <View style={styles.avatar}><MaterialCommunityIcons name="account" size={56} color={Theme.colors.blueDark} /></View>
-      <Text style={styles.name}>English Explorer</Text>
+      {state.avatarUrl ? (
+        <Image source={{ uri: state.avatarUrl }} style={[styles.avatar, { width: 80, height: 80, borderRadius: 40, alignSelf: 'center', marginBottom: 12, backgroundColor: '#FFF' }]} />
+      ) : (
+        <View style={styles.avatar}><MaterialCommunityIcons name="account" size={56} color={Theme.colors.blueDark} /></View>
+      )}
+      <Text style={styles.name}>{state.username || 'English Explorer'}</Text>
       <Text style={styles.level}>Cấp độ {level}</Text>
       <View style={styles.levelTrack}><View style={[styles.levelFill, { width: `${state.xp % 100}%` }]} /></View>
       <Text style={styles.levelCaption}>{state.xp % 100}/100 XP đến cấp tiếp theo</Text>

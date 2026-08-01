@@ -5,6 +5,17 @@ import { LearnerState, LessonResult } from '@/types/learning';
 import { request, ServerResponse } from '@/services/apiClient';
 
 const STORAGE_KEY = '@fun-english/learner-state-v2';
+
+type LearnerProfileResponse = {
+  totalScore: number;
+  dailyGoal: number;
+  dailyXp: number;
+  streak: number;
+  hearts: number;
+  username?: string;
+  avatarUrl?: string;
+};
+
 const initialState: LearnerState = {
   xp: 0,
   streak: 1,
@@ -22,6 +33,7 @@ type LearningContextValue = {
   completeLesson: (result: LessonResult) => Promise<void>;
   resolveMistake: (activityId: string) => Promise<void>;
   resetProgress: () => Promise<void>;
+  refreshProfile: () => Promise<void>;
 };
 
 const LearningContext = createContext<LearningContextValue | null>(null);
@@ -30,23 +42,42 @@ export function LearningProvider({ children }: React.PropsWithChildren) {
   const [state, setState] = useState(initialState);
   const [ready, setReady] = useState(false);
 
+  const refreshProfile = useCallback(async () => {
+    try {
+      const profile = await request<LearnerProfileResponse>('/api/learner/profile');
+      if (profile) {
+        setState((prev) => ({
+          ...prev,
+          xp: profile.totalScore || 0,
+          dailyGoal: profile.dailyGoal || 20,
+          dailyXp: profile.dailyXp || 0,
+          streak: profile.streak || 0,
+          hearts: profile.hearts ?? 5,
+          username: profile.username,
+          avatarUrl: profile.avatarUrl,
+        }));
+      }
+    } catch {}
+  }, []);
+
   useEffect(() => {
     Promise.all([
       AsyncStorage.getItem(STORAGE_KEY),
-      request<ServerResponse<any>>('/api/learner/profile').catch(() => null)
+      request<LearnerProfileResponse>('/api/learner/profile').catch(() => null)
     ])
-      .then(([localValue, profileResponse]) => {
+      .then(([localValue, profile]) => {
         let newState = { ...initialState };
         if (localValue) {
           newState = { ...newState, ...JSON.parse(localValue) };
         }
-        if (profileResponse?.data) {
-          const profile = profileResponse.data;
+        if (profile) {
           newState.xp = profile.totalScore || 0;
           newState.dailyGoal = profile.dailyGoal || 20;
           newState.dailyXp = profile.dailyXp || 0;
           newState.streak = profile.streak || 0;
           newState.hearts = profile.hearts ?? 5;
+          newState.username = profile.username;
+          newState.avatarUrl = profile.avatarUrl;
         }
         setState(newState);
       })
@@ -87,8 +118,8 @@ export function LearningProvider({ children }: React.PropsWithChildren) {
   const resetProgress = useCallback(async () => persist(initialState), [persist]);
 
   const value = useMemo(
-    () => ({ state, ready, completeLesson, resolveMistake, resetProgress }),
-    [state, ready, completeLesson, resolveMistake, resetProgress],
+    () => ({ state, ready, completeLesson, resolveMistake, resetProgress, refreshProfile }),
+    [state, ready, completeLesson, resolveMistake, resetProgress, refreshProfile],
   );
   return <LearningContext.Provider value={value}>{children}</LearningContext.Provider>;
 }

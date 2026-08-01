@@ -111,4 +111,5 @@ public final class AdminCurriculumModels {
             String message
     ) {}
     public record VersionDeleteResult(Long versionId, String versionCode, boolean deleted) {}
+    public record ReviewRequest(boolean approve, String feedback) {}
 }

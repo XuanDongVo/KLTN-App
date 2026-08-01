@@ -59,16 +59,32 @@ public class LearnerCurriculumController {
                 .dailyXp(user.getDailyXp())
                 .streak(user.getStreak())
                 .hearts(user.getHearts())
+                .username(user.getUsername())
+                .avatarUrl(user.getAvatarUrl())
                 .build()));
+    }
+
+    @PostMapping("/learner/profile/update")
+    public ResponseEntity<?> updateProfile(@RequestAttribute("userId") String userId, @RequestBody LearnerApiModels.UpdateProfileRequest request) {
+        try {
+            profileService.updateProfile(UUID.fromString(userId), request.username(), request.avatarUrl());
+            return ResponseEntity.ok(ServerResponse.success("Profile updated successfully"));
+        } catch (org.springframework.dao.DataIntegrityViolationException e) {
+            return ResponseEntity.badRequest().body(ServerResponse.error(400, "Username đã tồn tại. Vui lòng chọn tên khác."));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(ServerResponse.error(400, "Không thể cập nhật thông tin: " + e.getMessage()));
+        }
     }
 
     @GetMapping("/learner/history")
     public ResponseEntity<?> history(
             @RequestAttribute("userId") String userId,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) java.time.LocalDateTime startDate,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) java.time.LocalDateTime endDate) {
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) java.time.ZonedDateTime startDate,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) java.time.ZonedDateTime endDate) {
         
-        List<LearnerHistory> history = historyRepository.findByUserIdAndTimestampBetweenOrderByTimestampDesc(userId, startDate, endDate);
+        java.time.LocalDateTime localStart = startDate.withZoneSameInstant(java.time.ZoneId.systemDefault()).toLocalDateTime();
+        java.time.LocalDateTime localEnd = endDate.withZoneSameInstant(java.time.ZoneId.systemDefault()).toLocalDateTime();
+        List<LearnerHistory> history = historyRepository.findByUserIdAndTimestampBetweenOrderByTimestampDesc(userId, localStart, localEnd);
         return ResponseEntity.ok(ServerResponse.success(history));
     }
 
@@ -112,4 +128,9 @@ public class LearnerCurriculumController {
         return ResponseEntity.ok(ServerResponse.success(reviewSessionService.startReview(UUID.fromString(userId))));
     }
 
+    @PostMapping("/learner/profile/push-token")
+    public ResponseEntity<?> updatePushToken(@RequestAttribute("userId") String userId, @RequestBody LearnerApiModels.PushTokenRequest request) {
+        profileService.updatePushToken(UUID.fromString(userId), request.expoPushToken());
+        return ResponseEntity.ok(ServerResponse.success("Push token updated successfully"));
+    }
 }

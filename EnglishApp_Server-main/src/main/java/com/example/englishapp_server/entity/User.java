@@ -71,6 +71,9 @@ public class User {
     @Column(name = "last_login_at")
     private LocalDateTime lastLoginAt;
 
+    @Column(name = "expo_push_token")
+    private String expoPushToken;
+
     @PrePersist
     void initializeAccountMetadata() {
         if (accountStatus == null) accountStatus = AccountStatus.ACTIVE;

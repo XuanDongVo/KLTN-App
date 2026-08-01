@@ -79,6 +79,34 @@ public class LearnerProfileService {
         return user;
     }
 
+    @Transactional
+    public void updateProfile(UUID userId, String username, String avatarUrl) {
+        User user = userRepository.findById(userId).orElseThrow();
+        boolean changed = false;
+        if (username != null && !username.trim().isEmpty()) {
+            if (!username.trim().equals(user.getUsername())) {
+                user.setUsername(username.trim());
+                changed = true;
+            }
+        }
+        if (avatarUrl != null && !avatarUrl.trim().isEmpty()) {
+            if (!avatarUrl.trim().equals(user.getAvatarUrl())) {
+                user.setAvatarUrl(avatarUrl.trim());
+                changed = true;
+            }
+        }
+        if (changed) {
+            userRepository.save(user);
+        }
+    }
+
+    @Transactional
+    public void updatePushToken(UUID userId, String token) {
+        User user = userRepository.findById(userId).orElseThrow();
+        user.setExpoPushToken(token);
+        userRepository.save(user);
+    }
+
     private boolean refreshDailyStats(User user) {
         boolean changed = false;
         LocalDate today = LocalDate.now();

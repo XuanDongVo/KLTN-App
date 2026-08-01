@@ -12,11 +12,12 @@ export type CloudinarySignature = {
   upload_url?: string;
 };
 
-export const getUploadSignature = async (userId: string, extension: string): Promise<CloudinarySignature> => {
+export const getUploadSignature = async (userId: string, extension: string, folderType?: string): Promise<CloudinarySignature> => {
   const token = await AsyncStorage.getItem('userToken');
   const filename = `photo_${Date.now()}.${extension}`;
+  const folder = folderType ? `${folderType}/${userId}` : `users/${userId}`;
   
-  const response = await fetch(`${BASE_URL}/upload/get-upload-url?folder=users/${userId}&fileName=${filename}&contentType=image/${extension}`, {
+  const response = await fetch(`${BASE_URL}/upload/get-upload-url?folder=${folder}&fileName=${filename}&contentType=image/${extension}`, {
     method: 'GET',
     headers: {
       'Authorization': `Bearer ${token}`,
@@ -43,7 +44,7 @@ export const uploadToCloudinary = async (imageUri: string, signatureData: Cloudi
     uri: imageUri,
     type: 'image/jpeg',
     name: 'photo.jpg',
-  } as any);
+  } as unknown as Blob);
 
   formData.append('api_key', signatureData.api_key!);
   formData.append('timestamp', signatureData.timestamp!.toString());
@@ -57,7 +58,7 @@ export const uploadToCloudinary = async (imageUri: string, signatureData: Cloudi
     headers: {
       'Content-Type': 'multipart/form-data',
     },
-  });
+  } as RequestInit);
 
   if (!response.ok) {
     throw new Error('Failed to upload image to Cloudinary');

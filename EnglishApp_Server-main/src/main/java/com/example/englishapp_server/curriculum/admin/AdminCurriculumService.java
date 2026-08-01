@@ -7,6 +7,10 @@ import jakarta.persistence.EntityManager;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import tools.jackson.databind.ObjectMapper;
+import com.example.englishapp_server.service.ExpoPushNotificationService;
+import com.example.englishapp_server.repository.jpa.UserRepository;
+import com.example.englishapp_server.common.enums.UserRole;
+import com.example.englishapp_server.entity.User;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -29,6 +33,8 @@ public class AdminCurriculumService {
     private final ActivityAttemptRepository attemptRepository;
     private final EntityManager entityManager;
     private final ObjectMapper objectMapper;
+    private final ExpoPushNotificationService pushService;
+    private final UserRepository userRepository;
 
     public AdminCurriculumService(CurriculumVersionRepository versionRepository,
                                   LearningUnitRepository unitRepository,
@@ -38,7 +44,9 @@ public class AdminCurriculumService {
                                   LearnerLessonProgressRepository progressRepository,
                                   ActivityAttemptRepository attemptRepository,
                                   EntityManager entityManager,
-                                  ObjectMapper objectMapper) {
+                                  ObjectMapper objectMapper,
+                                  ExpoPushNotificationService pushService,
+                                  UserRepository userRepository) {
         this.versionRepository = versionRepository;
         this.unitRepository = unitRepository;
         this.lessonRepository = lessonRepository;
@@ -48,6 +56,8 @@ public class AdminCurriculumService {
         this.attemptRepository = attemptRepository;
         this.entityManager = entityManager;
         this.objectMapper = objectMapper;
+        this.pushService = pushService;
+        this.userRepository = userRepository;
     }
 
     @Transactional(readOnly = true)
@@ -428,6 +438,57 @@ public class AdminCurriculumService {
         draft.setImportedAt(LocalDateTime.now());
         draft.setChecksum(sha256(writeJson(tree(draft))));
         return tree(versionRepository.save(draft));
+    }
+
+    @Transactional
+    public CurriculumTree submitForReview(Long versionId) {
+        CurriculumVersion draft = requireDraft(versionId);
+        ValidationReport report = validate(versionId);
+        if (!report.valid()) {
+            throw new IllegalStateException("Bản nháp còn " + report.issues().size() + " lỗi, chưa thể gửi duyệt");
+        }
+        draft.setLifecycleStatus(LifecycleStatus.PENDING);
+        
+        // Notify Admins
+        List<User> admins = userRepository.findByRoleAndExpoPushTokenIsNotNull(UserRole.ADMIN);
+        for (User admin : admins) {
+            pushService.sendPushNotification(admin.getExpoPushToken(), 
+                "Bản nháp cần duyệt", 
+                "Contributor vừa gửi một bản nháp mới (" + draft.getVersionCode() + ")", 
+                Map.of("type", "CURRICULUM_REVIEW", "versionId", versionId));
+        }
+
+        return tree(versionRepository.save(draft));
+    }
+
+    @Transactional
+    public CurriculumTree reviewDraft(Long versionId, boolean approve, String feedback) {
+        CurriculumVersion version = requireVersion(versionId);
+        if (version.getLifecycleStatus() != LifecycleStatus.PENDING) {
+            throw new IllegalStateException("Phiên bản này không ở trạng thái chờ duyệt");
+        }
+        
+        CurriculumTree result;
+        String statusText;
+        if (approve) {
+            result = publish(versionId);
+            statusText = "Đã được phê duyệt và xuất bản";
+        } else {
+            version.setLifecycleStatus(LifecycleStatus.REJECTED);
+            result = tree(versionRepository.save(version));
+            statusText = "Đã bị từ chối";
+        }
+
+        // Notify Contributors
+        List<User> contributors = userRepository.findByRoleAndExpoPushTokenIsNotNull(UserRole.CONTRIBUTOR);
+        for (User contributor : contributors) {
+            pushService.sendPushNotification(contributor.getExpoPushToken(), 
+                "Kết quả duyệt bản nháp", 
+                "Bản nháp " + version.getVersionCode() + " " + statusText + (feedback != null && !feedback.isBlank() ? ". Lời nhắn: " + feedback : ""), 
+                Map.of("type", "CURRICULUM_REVIEW_RESULT", "versionId", versionId, "approved", approve));
+        }
+
+        return result;
     }
 
     private void cloneUnits(CurriculumVersion source, CurriculumVersion target) {

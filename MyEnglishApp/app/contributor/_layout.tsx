@@ -2,20 +2,19 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { Slot, usePathname, useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { Pressable, Text, useWindowDimensions, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Theme } from '@/constants/Theme';
 import { styles } from '@/styles/admin/_layout.styles';
 
 const links = [
-  { path: '/admin', label: 'Tổng quan', icon: 'view-dashboard' },
-  { path: '/admin/curriculum', label: 'Chương trình học', icon: 'book-education' },
-  { path: '/admin/users', label: 'Người học', icon: 'account-group' },
-  { path: '/admin/media', label: 'Thư viện ảnh', icon: 'image-multiple' },
+  { path: '/contributor', label: 'Bảng điều khiển', icon: 'view-dashboard' },
+  { path: '/contributor/curriculum', label: 'Chương trình học', icon: 'book-education' },
+  { path: '/contributor/media', label: 'Thư viện ảnh', icon: 'image-multiple' },
 ];
 
-export default function AdminLayout() {
+export default function ContributorLayout() {
   const router = useRouter();
   const pathname = usePathname();
   const insets = useSafeAreaInsets();
@@ -39,11 +38,11 @@ export default function AdminLayout() {
       ]}>
         <View style={styles.brand}>
           <View style={styles.brandIcon}><MaterialCommunityIcons name="book-open-page-variant" size={24} color="#FFFFFF" /></View>
-          <View style={styles.brandCopy}><Text style={styles.brandName}>Fun English</Text><Text style={styles.brandRole}>CURRICULUM ADMIN</Text></View>
+          <View style={styles.brandCopy}><Text style={styles.brandName}>Fun English</Text><Text style={styles.brandRole}>CONTRIBUTOR</Text></View>
           {mobile ? <Pressable accessibilityLabel="Đóng menu" onPress={() => setOpen(false)} style={styles.closeMenu}><MaterialCommunityIcons name="close" size={25} color="#FFFFFF" /></Pressable> : null}
         </View>
         <View style={styles.links}>{links.map((link) => {
-          const active = link.path === '/admin' ? pathname === link.path : pathname.startsWith(link.path);
+          const active = link.path === '/contributor' ? pathname === link.path : pathname.startsWith(link.path);
           return <Pressable key={link.path} onPress={() => navigate(link.path)} style={[styles.link, active && styles.linkActive]}>
             <MaterialCommunityIcons name={link.icon as never} size={21} color={active ? Theme.colors.green : '#A9B5BD'} />
             <Text style={[styles.linkText, active && styles.linkTextActive]}>{link.label}</Text>
@@ -63,7 +62,7 @@ export default function AdminLayout() {
           <Pressable accessibilityLabel="Mở menu quản trị" onPress={() => setOpen(true)} style={styles.menu}>
             <MaterialCommunityIcons name="menu" size={27} color={Theme.colors.ink} />
           </Pressable>
-          <Text style={styles.mobileTitle}>Fun English Admin</Text>
+          <Text style={styles.mobileTitle}>Fun English Contributor</Text>
         </View> : null}
         <Slot />
       </View>

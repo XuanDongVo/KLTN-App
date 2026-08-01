@@ -80,6 +80,15 @@ export default function SettingsScreen() {
         </View>
       </View>
 
+      <Pressable accessibilityRole="button" onPress={() => router.push('/(screens)/edit-profile')} style={({ pressed }) => [styles.actionRow, pressed && styles.rowPressed, { marginBottom: 20 }]}>
+        <View style={[styles.logoutIcon, { backgroundColor: '#FFF0F5' }]}><MaterialCommunityIcons name="account-edit" size={24} color={Theme.colors.coralDark} /></View>
+        <View style={styles.logoutCopy}>
+          <Text style={styles.actionTitle}>Chỉnh sửa thông tin</Text>
+          <Text style={styles.logoutSubtitle}>Đổi tên hiển thị và ảnh đại diện</Text>
+        </View>
+        <MaterialCommunityIcons name="chevron-right" size={25} color={Theme.colors.muted} />
+      </Pressable>
+
       <Text style={styles.sectionTitle}>Bảo mật</Text>
       <Pressable accessibilityRole="button" onPress={() => router.push({ pathname: '/(auth)/forgot-password', params: { defaultEmail: email, mode: 'change' } })} style={({ pressed }) => [styles.actionRow, pressed && styles.rowPressed, { marginBottom: 20 }]}>
         <View style={[styles.logoutIcon, { backgroundColor: '#EAF7FE' }]}><MaterialCommunityIcons name="shield-check" size={24} color={Theme.colors.greenDark} /></View>
@@ -96,6 +105,16 @@ export default function SettingsScreen() {
         <View style={styles.logoutCopy}>
           <Text style={styles.actionTitle}>Trung tâm hỗ trợ</Text>
           <Text style={styles.logoutSubtitle}>Báo lỗi, hỗ trợ email & tư vấn</Text>
+        </View>
+        <MaterialCommunityIcons name="chevron-right" size={25} color={Theme.colors.muted} />
+      </Pressable>
+
+      <Text style={styles.sectionTitle}>Tham gia đóng góp</Text>
+      <Pressable accessibilityRole="button" onPress={() => router.push('/(screens)/contributor-request')} style={({ pressed }) => [styles.actionRow, pressed && styles.rowPressed, { marginBottom: 20 }]}>
+        <View style={[styles.logoutIcon, { backgroundColor: '#F0EDFF' }]}><MaterialCommunityIcons name="account-star" size={24} color={Theme.colors.violet} /></View>
+        <View style={styles.logoutCopy}>
+          <Text style={styles.actionTitle}>Trở thành Contributor</Text>
+          <Text style={styles.logoutSubtitle}>Tham gia sáng tạo nội dung bài học</Text>
         </View>
         <MaterialCommunityIcons name="chevron-right" size={25} color={Theme.colors.muted} />
       </Pressable>

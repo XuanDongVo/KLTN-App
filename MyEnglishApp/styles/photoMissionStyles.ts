@@ -1,6 +1,7 @@
+import { StyleSheet } from 'react-native';
 import { Theme } from '@/constants/Theme';
 
-export const photoMissionStyles: any = {
+export const photoMissionStyles = StyleSheet.create({
   container: { gap: 14 }, result: { alignItems: 'center', gap: 10 },
   preview: { width: '100%', aspectRatio: 4 / 3, borderRadius: 8, backgroundColor: '#E8EEF2' },
   placeholder: { width: '100%', aspectRatio: 4 / 3, borderRadius: 8, borderWidth: 2, borderStyle: 'dashed', borderColor: '#BFD9E8', backgroundColor: '#EFF9FE', alignItems: 'center', justifyContent: 'center', padding: 30, gap: 12 },
@@ -30,4 +31,4 @@ export const photoMissionStyles: any = {
   cancelBtnText: { color: Theme.colors.muted, fontWeight: '800' },
   confirmBtn: { flex: 1, height: 50, backgroundColor: Theme.colors.violet, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
   confirmBtnText: { color: '#FFF', fontWeight: '800' }
-};
+});

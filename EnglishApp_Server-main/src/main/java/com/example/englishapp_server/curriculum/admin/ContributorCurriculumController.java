@@ -10,12 +10,12 @@ import org.springframework.web.bind.annotation.*;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/admin/curriculum")
-public class AdminCurriculumController {
+@RequestMapping("/api/contributor/curriculum")
+public class ContributorCurriculumController {
     private final AdminCurriculumService service;
     private final AdminAuditService auditService;
 
-    public AdminCurriculumController(AdminCurriculumService service, AdminAuditService auditService) {
+    public ContributorCurriculumController(AdminCurriculumService service, AdminAuditService auditService) {
         this.service = service;
         this.auditService = auditService;
     }
@@ -125,33 +125,12 @@ public class AdminCurriculumController {
         return ok(service.getTree(versionId));
     }
 
-    @PostMapping("/versions/{versionId}/publish")
-    public ResponseEntity<?> publish(@RequestAttribute("userId") String adminUserId, @PathVariable Long versionId) {
-        CurriculumTree published = service.publish(versionId);
-        auditService.record(UUID.fromString(adminUserId), "CURRICULUM_PUBLISHED", "CURRICULUM_VERSION",
-                published.id().toString(), published.versionCode());
-        return ok(published);
-    }
-
-    @PostMapping("/versions/{versionId}/review")
-    public ResponseEntity<?> review(@RequestAttribute("userId") String adminUserId, @PathVariable Long versionId, @RequestBody ReviewRequest request) {
-        CurriculumTree result = service.reviewDraft(versionId, request.approve(), request.feedback());
-        auditService.record(UUID.fromString(adminUserId), request.approve() ? "CURRICULUM_APPROVED" : "CURRICULUM_REJECTED", "CURRICULUM_VERSION",
-                result.id().toString(), result.versionCode());
-        return ok(result);
-    }
-
-    @GetMapping("/versions/{versionId}/delete-check")
-    public ResponseEntity<?> checkDelete(@PathVariable Long versionId) {
-        return ok(service.checkVersionDelete(versionId));
-    }
-
-    @DeleteMapping("/versions/{versionId}")
-    public ResponseEntity<?> deleteVersion(@RequestAttribute("userId") String adminUserId, @PathVariable Long versionId) {
-        VersionDeleteResult result = service.deleteVersion(versionId);
-        auditService.record(UUID.fromString(adminUserId), "CURRICULUM_VERSION_DELETED", "CURRICULUM_VERSION",
-                result.versionId().toString(), result.versionCode());
-        return ok(result);
+    @PostMapping("/versions/{versionId}/submit-review")
+    public ResponseEntity<?> submitReview(@RequestAttribute("userId") String userId, @PathVariable Long versionId) {
+        CurriculumTree submitted = service.submitForReview(versionId);
+        auditService.record(UUID.fromString(userId), "CURRICULUM_SUBMITTED_FOR_REVIEW", "CURRICULUM_VERSION",
+                submitted.id().toString(), submitted.versionCode());
+        return ok(submitted);
     }
 
     private ResponseEntity<?> ok(Object data) {

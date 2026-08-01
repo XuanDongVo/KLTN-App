@@ -49,8 +49,13 @@ export default function HistoryScreen() {
     // Generate dates between start and end
     const dates: string[] = [];
     let current = new Date(startDate);
+    
+    const getLocalDateString = (d: Date) => {
+      return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+    };
+
     while (current <= endDate) {
-      dates.push(current.toISOString().split('T')[0]);
+      dates.push(getLocalDateString(current));
       current.setDate(current.getDate() + 1);
     }
     
@@ -67,7 +72,7 @@ export default function HistoryScreen() {
 
     const data = dates.map(d => ({
       date: d,
-      dayName: new Date(d).toLocaleDateString('vi-VN', { weekday: 'short' }),
+      dayName: new Date(d + 'T00:00:00').toLocaleDateString('vi-VN', { weekday: 'short' }),
       xp: xpByDate[d],
     }));
 

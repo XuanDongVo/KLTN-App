@@ -24,6 +24,7 @@ public interface UserRepository extends JpaRepository<User, UUID> {
     User findByEmailAndPasswordHash(String email, String passwordHash);
     User findUserById(UUID id);
     List<User> findByRoleAndAccountStatus(UserRole role, AccountStatus status);
+    List<User> findByRoleAndExpoPushTokenIsNotNull(UserRole role);
 
     long countByRole(UserRole role);
     long countByRoleAndAccountStatus(UserRole role, AccountStatus status);

@@ -11,4 +11,6 @@ public class LearnerProfileResponse {
     private Integer dailyXp;
     private Integer streak;
     private Integer hearts;
+    private String username;
+    private String avatarUrl;
 }

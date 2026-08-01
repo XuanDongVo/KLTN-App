@@ -98,4 +98,11 @@ public final class LearnerApiModels {
             String imageUrl,
             Double confidenceScore
     ) {}
+
+    public record PushTokenRequest(String expoPushToken) {}
+
+    public record UpdateProfileRequest(
+            String username,
+            String avatarUrl
+    ) {}
 }
