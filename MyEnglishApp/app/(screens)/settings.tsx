@@ -17,12 +17,14 @@ export default function SettingsScreen() {
   const { showConfirm } = useModal();
   const { resetProgress } = useLearning();
   const [email, setEmail] = useState('');
+  const [isVerified, setIsVerified] = useState(false);
   const [confirmVisible, setConfirmVisible] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
   const [logoutError, setLogoutError] = useState('');
 
   useFocusEffect(useCallback(() => {
     AsyncStorage.getItem('userEmail').then((value) => setEmail(value ?? '')).catch(() => undefined);
+    AsyncStorage.getItem('isVerified').then((value) => setIsVerified(value === 'true')).catch(() => undefined);
   }, []));
 
   const logout = async () => {
@@ -78,11 +80,21 @@ export default function SettingsScreen() {
         </View>
       </View>
 
+      <Text style={styles.sectionTitle}>Bảo mật</Text>
+      <Pressable accessibilityRole="button" onPress={() => router.push({ pathname: '/(auth)/forgot-password', params: { defaultEmail: email, mode: 'change' } })} style={({ pressed }) => [styles.actionRow, pressed && styles.rowPressed, { marginBottom: 20 }]}>
+        <View style={[styles.logoutIcon, { backgroundColor: '#EAF7FE' }]}><MaterialCommunityIcons name="shield-check" size={24} color={Theme.colors.greenDark} /></View>
+        <View style={styles.logoutCopy}>
+          <Text style={styles.actionTitle}>Đổi mật khẩu</Text>
+          <Text style={styles.logoutSubtitle}>Cập nhật lại mật khẩu mới qua OTP</Text>
+        </View>
+        <MaterialCommunityIcons name="chevron-right" size={25} color={Theme.colors.muted} />
+      </Pressable>
+
       <Text style={styles.sectionTitle}>Hỗ trợ & Dịch vụ</Text>
-      <Pressable accessibilityRole="button" onPress={() => router.push('/support')} style={({ pressed }) => [styles.logoutRow, pressed && styles.rowPressed, { marginBottom: 20 }]}>
+      <Pressable accessibilityRole="button" onPress={() => router.push('/support')} style={({ pressed }) => [styles.actionRow, pressed && styles.rowPressed, { marginBottom: 20 }]}>
         <View style={[styles.logoutIcon, { backgroundColor: '#EAF7FE' }]}><MaterialCommunityIcons name="face-agent" size={24} color={Theme.colors.blueDark} /></View>
         <View style={styles.logoutCopy}>
-          <Text style={styles.logoutTitle}>Trung tâm hỗ trợ</Text>
+          <Text style={styles.actionTitle}>Trung tâm hỗ trợ</Text>
           <Text style={styles.logoutSubtitle}>Báo lỗi, hỗ trợ email & tư vấn</Text>
         </View>
         <MaterialCommunityIcons name="chevron-right" size={25} color={Theme.colors.muted} />

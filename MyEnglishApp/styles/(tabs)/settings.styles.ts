@@ -21,6 +21,8 @@ export const styles = StyleSheet.create({
   logoutCopy: { flex: 1 },
   logoutTitle: { color: Theme.colors.coralDark, fontSize: 16, fontWeight: '900' },
   logoutSubtitle: { color: Theme.colors.muted, fontSize: 12, marginTop: 3 },
+  actionRow: { minHeight: 78, flexDirection: 'row', alignItems: 'center', gap: 12, padding: 12, borderWidth: 1, borderBottomWidth: 3, borderColor: Theme.colors.border, borderRadius: 8, backgroundColor: '#FFFFFF' },
+  actionTitle: { color: Theme.colors.ink, fontSize: 16, fontWeight: '900' },
   note: { flexDirection: 'row', alignItems: 'flex-start', gap: 9, paddingVertical: 18 },
   noteText: { flex: 1, color: Theme.colors.muted, fontSize: 12, lineHeight: 18 },
   errorBanner: { minHeight: 48, flexDirection: 'row', alignItems: 'center', gap: 8, padding: 10, borderRadius: 8, backgroundColor: '#FFF0EF' },

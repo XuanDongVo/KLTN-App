@@ -70,7 +70,7 @@ export default function ProfileScreen() {
                 Bạn chưa xác thực email. Xác thực ngay để nhận thông báo báo cáo tiến độ từ hệ thống.
             </Text>
             <Pressable 
-                onPress={() => router.push('/(auth)/verify?returnTo=profile')}
+                onPress={() => router.push({ pathname: '/(auth)/forgot-password', params: { mode: 'verify' } })}
                 style={{ backgroundColor: Theme.colors.coral, paddingVertical: 10, borderRadius: 8, alignItems: 'center' }}
             >
                 <Text style={{ color: '#FFF', fontWeight: '700', fontSize: 14 }}>Xác thực ngay</Text>

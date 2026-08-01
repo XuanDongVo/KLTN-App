@@ -34,7 +34,7 @@ export default function LoginScreen() {
         ['refreshToken', response.data.refreshToken],
         ['userRole', response.data.role],
         ['userEmail', email.trim()],
-        ['isVerified', String(response.data.isVerified)],
+        ['isVerified', String(response.data.verified)],
       ]);
       
       if (response.data.role === 'ADMIN') {
@@ -114,6 +114,9 @@ export default function LoginScreen() {
             <MaterialCommunityIcons name={showPassword ? 'eye-off-outline' : 'eye-outline'} size={22} color={Theme.colors.muted} />
           </Pressable>
         </View>
+        <Pressable onPress={() => router.push('/(auth)/forgot-password')} style={{ alignSelf: 'flex-end', marginTop: 8, marginBottom: 16 }}>
+          <Text style={{ color: Theme.colors.greenDark, fontWeight: '600' }}>Quên mật khẩu?</Text>
+        </Pressable>
 
         {error ? <View style={styles.errorBanner}><MaterialCommunityIcons name="alert-circle" size={21} color={Theme.colors.coralDark} /><Text style={styles.error}>{error}</Text></View> : null}
         <View style={styles.submit}>{loading ? <ActivityIndicator size="large" color={Theme.colors.green} /> : <ActionButton label="Đăng nhập" icon="login" onPress={login} />}</View>
