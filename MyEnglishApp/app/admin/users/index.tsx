@@ -1,14 +1,16 @@
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Theme } from '@/constants/Theme';
 import { adminOperationsService } from '@/services/adminOperationsService';
 import type { AccountStatus, AdminUserDetail, AdminUserPage, AdminUserSummary } from '@/types/adminOperations';
-import { styles } from './index.styles';
+import { styles } from '@/styles/admin/users/index.styles';
+import { useModal } from '@/context/ModalContext';
 
 export default function AdminUsersScreen() {
+  const { showAlert, showConfirm } = useModal();
   const [query, setQuery] = useState('');
   const [status, setStatus] = useState<AccountStatus | undefined>();
   const [data, setData] = useState<AdminUserPage>();
@@ -35,24 +37,27 @@ export default function AdminUsersScreen() {
   const openUser = async (user: AdminUserSummary) => {
     setBusy(true);
     try { setSelected(await adminOperationsService.getUser(user.id)); }
-    catch (reason) { Alert.alert('Không tải được người học', messageOf(reason)); }
+    catch (reason) { showAlert('Không tải được người học', messageOf(reason)); }
     finally { setBusy(false); }
   };
 
   const toggleStatus = () => {
     if (!selected) return;
     const next: AccountStatus = selected.user.status === 'ACTIVE' ? 'LOCKED' : 'ACTIVE';
-    Alert.alert(next === 'LOCKED' ? 'Khóa tài khoản?' : 'Mở khóa tài khoản?', next === 'LOCKED' ? 'Người học sẽ không thể đăng nhập hoặc tiếp tục dùng JWT hiện tại.' : 'Người học có thể đăng nhập lại bình thường.', [
-      { text: 'Hủy', style: 'cancel' },
-      { text: next === 'LOCKED' ? 'Khóa' : 'Mở khóa', style: next === 'LOCKED' ? 'destructive' : 'default', onPress: () => void (async () => {
-        setBusy(true);
-        try {
-          setSelected(await adminOperationsService.updateUserStatus(selected.user.id, next));
-          await load(data?.page ?? 0);
-        } catch (reason) { Alert.alert('Không cập nhật được', messageOf(reason)); }
-        finally { setBusy(false); }
-      })() },
-    ]);
+    showConfirm(
+        next === 'LOCKED' ? 'Khóa tài khoản?' : 'Mở khóa tài khoản?',
+        next === 'LOCKED' ? 'Người học sẽ không thể đăng nhập hoặc tiếp tục dùng JWT hiện tại.' : 'Người học có thể đăng nhập lại bình thường.',
+        next === 'LOCKED' ? 'Khóa' : 'Mở khóa',
+        'Hủy',
+        async () => {
+            setBusy(true);
+            try {
+                setSelected(await adminOperationsService.updateUserStatus(selected.user.id, next));
+                await load(data?.page ?? 0);
+            } catch (reason) { showAlert('Không cập nhật được', messageOf(reason)); }
+            finally { setBusy(false); }
+        }
+    );
   };
 
   return <View style={styles.screen}><ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">

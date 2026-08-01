@@ -9,11 +9,12 @@ import { ActionButton } from '@/components/ui/ActionButton';
 import { Theme } from '@/constants/Theme';
 import { useLearning } from '@/context/LearningContext';
 import { logoutApi, logoutAllApi } from '@/services/authService';
-import { Alert } from 'react-native';
-import { styles } from './settings.styles';
+import { useModal } from '@/context/ModalContext';
+import { styles } from '@/styles/(tabs)/settings.styles';
 
 export default function SettingsScreen() {
   const router = useRouter();
+  const { showConfirm } = useModal();
   const { resetProgress } = useLearning();
   const [email, setEmail] = useState('');
   const [confirmVisible, setConfirmVisible] = useState(false);
@@ -45,9 +46,7 @@ export default function SettingsScreen() {
   };
 
   const handleLogoutAll = async () => {
-    Alert.alert('Đăng xuất mọi thiết bị', 'Bạn có chắc chắn muốn đăng xuất khỏi tất cả thiết bị không?', [
-      { text: 'Hủy', style: 'cancel' },
-      { text: 'Đăng xuất', style: 'destructive', onPress: async () => {
+    showConfirm('Đăng xuất mọi thiết bị', 'Bạn có chắc chắn muốn đăng xuất khỏi tất cả thiết bị không?', 'Đăng xuất', 'Hủy', async () => {
         try {
           const email = await AsyncStorage.getItem('userEmail');
           if (email) await logoutAllApi(email);
@@ -55,14 +54,19 @@ export default function SettingsScreen() {
         await AsyncStorage.multiRemove(['userId', 'userToken', 'userRole', 'userEmail', 'refreshToken']);
         await resetProgress().catch(() => undefined);
         router.replace({ pathname: '/(auth)/login', params: { loggedOut: '1' } });
-      }},
-    ]);
+      }
+    );
   };
 
   return <SafeAreaView style={styles.safe} edges={['top']}>
+    <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingTop: 12, paddingBottom: 8 }}>
+        <Pressable onPress={() => router.back()} style={{ marginRight: 12 }}>
+            <MaterialCommunityIcons name="arrow-left" size={28} color={Theme.colors.ink} />
+        </Pressable>
+        <Text style={styles.title}>Cài đặt</Text>
+    </View>
     <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
       <Text style={styles.eyebrow}>TÀI KHOẢN VÀ ỨNG DỤNG</Text>
-      <Text style={styles.title}>Cài đặt</Text>
       <Text style={styles.subtitle}>Quản lý phiên đăng nhập trên thiết bị này.</Text>
 
       <Text style={styles.sectionTitle}>Tài khoản</Text>
@@ -73,6 +77,16 @@ export default function SettingsScreen() {
           <View style={styles.syncRow}><View style={styles.syncDot} /><Text style={styles.accountSubtitle}>Đang đồng bộ tiến độ với máy chủ</Text></View>
         </View>
       </View>
+
+      <Text style={styles.sectionTitle}>Hỗ trợ & Dịch vụ</Text>
+      <Pressable accessibilityRole="button" onPress={() => router.push('/support')} style={({ pressed }) => [styles.logoutRow, pressed && styles.rowPressed, { marginBottom: 20 }]}>
+        <View style={[styles.logoutIcon, { backgroundColor: '#EAF7FE' }]}><MaterialCommunityIcons name="face-agent" size={24} color={Theme.colors.blueDark} /></View>
+        <View style={styles.logoutCopy}>
+          <Text style={styles.logoutTitle}>Trung tâm hỗ trợ</Text>
+          <Text style={styles.logoutSubtitle}>Báo lỗi, hỗ trợ email & tư vấn</Text>
+        </View>
+        <MaterialCommunityIcons name="chevron-right" size={25} color={Theme.colors.muted} />
+      </Pressable>
 
       <Text style={styles.sectionTitle}>Phiên đăng nhập</Text>
       <Pressable accessibilityRole="button" onPress={() => setConfirmVisible(true)} style={({ pressed }) => [styles.logoutRow, pressed && styles.rowPressed]}>

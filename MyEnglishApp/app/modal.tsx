@@ -3,7 +3,7 @@ import { Platform, StyleSheet } from 'react-native';
 
 // import EditScreenInfo from '@/components/EditScreenInfo';
 import { Text, View } from '@/components/Themed';
-import { styles } from './modal.styles';
+import { styles } from '@/styles/modal.styles';
 
 export default function ModalScreen() {
   return (

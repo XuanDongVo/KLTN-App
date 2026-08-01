@@ -7,8 +7,8 @@ import { Theme } from '@/constants/Theme';
 import { adminCurriculumService } from '@/services/adminCurriculumService';
 import { adminOperationsService } from '@/services/adminOperationsService';
 import type { AdminLevelOverview } from '@/types/adminCurriculum';
-import type { AdminDashboard } from '@/types/adminOperations';
-import { styles } from './index.styles';
+import type { AdminDashboard, ChallengeStatsResponse } from '@/types/adminOperations';
+import { styles } from '@/styles/admin/index.styles';
 
 export default function AdminDashboardScreen() {
   const router = useRouter();
@@ -16,12 +16,21 @@ export default function AdminDashboardScreen() {
   const compact = width < 560;
   const [levels, setLevels] = useState<AdminLevelOverview[]>([]);
   const [dashboard, setDashboard] = useState<AdminDashboard>();
+  const [challengeStats, setChallengeStats] = useState<ChallengeStatsResponse>();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
   useEffect(() => {
-    Promise.all([adminCurriculumService.getLevels(), adminOperationsService.getDashboard()])
-      .then(([nextLevels, nextDashboard]) => { setLevels(nextLevels); setDashboard(nextDashboard); })
+    Promise.all([
+      adminCurriculumService.getLevels(), 
+      adminOperationsService.getDashboard(),
+      adminOperationsService.getChallengeStats()
+    ])
+      .then(([nextLevels, nextDashboard, nextChallengeStats]) => { 
+        setLevels(nextLevels); 
+        setDashboard(nextDashboard); 
+        setChallengeStats(nextChallengeStats);
+      })
       .catch((reason) => setError(reason instanceof Error ? reason.message : 'Không tải được tổng quan quản trị.'))
       .finally(() => setLoading(false));
   }, []);
@@ -54,6 +63,34 @@ export default function AdminDashboardScreen() {
       <Stat icon="play-circle" label="Tổng session" value={dashboard?.totalSessions ?? 0} color={Theme.colors.yellowDark} />
       <Stat icon="check-decagram" label="Lesson hoàn thành" value={dashboard?.completedLessons ?? 0} color={Theme.colors.greenDark} />
     </View>
+
+    <View style={styles.sectionHeading}><Text style={styles.sectionTitle}>Thử Thách Người Học</Text><Text style={styles.sectionMeta}>Tổng quan</Text></View>
+    <View style={{ flexDirection: 'row', gap: 15, marginBottom: 20 }}>
+        <View style={{ flex: 1, backgroundColor: '#E8F8EA', padding: 15, borderRadius: 12, alignItems: 'center' }}>
+            <Text style={{ fontSize: 24, fontWeight: '800', color: Theme.colors.greenDark }}>{challengeStats?.totalActive ?? 0}</Text>
+            <Text style={{ fontSize: 13, color: Theme.colors.green, marginTop: 4 }}>Đang tham gia</Text>
+        </View>
+        <View style={{ flex: 1, backgroundColor: '#EAF7FE', padding: 15, borderRadius: 12, alignItems: 'center' }}>
+            <Text style={{ fontSize: 24, fontWeight: '800', color: Theme.colors.blueDark }}>{challengeStats?.totalCompleted ?? 0}</Text>
+            <Text style={{ fontSize: 13, color: Theme.colors.blue, marginTop: 4 }}>Hoàn thành</Text>
+        </View>
+        <View style={{ flex: 1, backgroundColor: '#FFF1F0', padding: 15, borderRadius: 12, alignItems: 'center' }}>
+            <Text style={{ fontSize: 24, fontWeight: '800', color: Theme.colors.coralDark }}>{challengeStats?.totalFailed ?? 0}</Text>
+            <Text style={{ fontSize: 13, color: Theme.colors.coral, marginTop: 4 }}>Thất bại</Text>
+        </View>
+    </View>
+
+    {challengeStats && challengeStats.optionsStats.length > 0 && (
+      <View style={{ backgroundColor: '#F9FAFB', borderRadius: 12, padding: 15, marginBottom: 30 }}>
+        <Text style={{ fontSize: 15, fontWeight: '700', color: Theme.colors.ink, marginBottom: 10 }}>Phân bố lựa chọn Thử thách</Text>
+        {challengeStats.optionsStats.map((stat, idx) => (
+            <View key={idx} style={{ flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 8, borderBottomWidth: idx < challengeStats.optionsStats.length - 1 ? 1 : 0, borderBottomColor: Theme.colors.border }}>
+                <Text style={{ fontSize: 14, color: Theme.colors.ink }}>Gói {stat.targetXp} XP - {stat.targetDays} Ngày</Text>
+                <Text style={{ fontSize: 14, fontWeight: '700', color: Theme.colors.ink }}>{stat.count} người chọn</Text>
+            </View>
+        ))}
+      </View>
+    )}
 
     <View style={styles.curriculumBand}><View><Text style={styles.bandTitle}>Nội dung đang phục vụ</Text><Text style={styles.bandMeta}>{totals.units} unit · {totals.lessons} lesson · {totals.activities} activity</Text></View><Pressable onPress={() => router.push('/admin/media')} style={styles.mediaLink}><MaterialCommunityIcons name="image-multiple" size={19} color={Theme.colors.blueDark} /><Text style={styles.mediaLinkText}>Thư viện ảnh</Text></Pressable></View>
 

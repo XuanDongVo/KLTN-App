@@ -23,7 +23,7 @@ public class MailService {
             org.thymeleaf.context.Context context = new org.thymeleaf.context.Context();
             context.setVariable("email", to);
             context.setVariable("otp", otp);
-            context.setVariable("expireTime", 5);
+            context.setVariable("expireMinutes", 10);
 
             String htmlContent = templateEngine.process("email/verify-account", context);
 
@@ -35,7 +35,28 @@ public class MailService {
         }
     }
 
+    @org.springframework.scheduling.annotation.Async
+    public void sendChallengeReportEmail(String to, String username, int currentXp, int targetXp, int targetDays, int completedUnits, int learnedDays) {
+        try {
+            org.thymeleaf.context.Context context = new org.thymeleaf.context.Context();
+            context.setVariable("username", username);
+            context.setVariable("currentXp", currentXp);
+            context.setVariable("targetXp", targetXp);
+            context.setVariable("targetDays", targetDays);
+            context.setVariable("completedUnits", completedUnits);
+            context.setVariable("learnedDays", learnedDays);
+            context.setVariable("isSuccess", currentXp >= targetXp);
 
+            String htmlContent = templateEngine.process("email/challenge-report", context);
+
+            String subject = currentXp >= targetXp ? "EnglishApp - Chúc mừng bạn đã hoàn thành thử thách!" : "EnglishApp - Đừng nản chí, thử thách tiếp theo đang chờ bạn!";
+            sendHtmlMail(to, subject, htmlContent);
+
+            log.info("Challenge report email sent successfully to {}", to);
+        } catch (Exception e) {
+            log.error("CRITICAL: Could not send challenge report email to {}.", to, e);
+        }
+    }
     private void sendHtmlMail(String to, String subject, String htmlContent) {
         try {
             jakarta.mail.internet.MimeMessage message = mailSender.createMimeMessage();

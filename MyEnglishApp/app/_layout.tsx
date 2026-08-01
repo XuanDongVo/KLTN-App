@@ -8,6 +8,7 @@ import 'react-native-reanimated';
 
 import { useColorScheme } from '@/components/useColorScheme';
 import { LearningProvider } from '@/context/LearningContext';
+import { ModalProvider } from '@/context/ModalContext';
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -50,17 +51,20 @@ function RootLayoutNav() {
 
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <LearningProvider>
-        <StatusBar style="dark" />
-        <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: '#F7FAFC' } }}>
-          <Stack.Screen name="index" />
-          <Stack.Screen name="(auth)" />
-          <Stack.Screen name="(tabs)" />
-          <Stack.Screen name="(learner)" />
-          <Stack.Screen name="admin" />
-          <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
-        </Stack>
-      </LearningProvider>
+      <ModalProvider>
+        <LearningProvider>
+          <StatusBar style="dark" />
+          <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: '#F7FAFC' } }}>
+            <Stack.Screen name="index" />
+            <Stack.Screen name="(auth)" />
+            <Stack.Screen name="(tabs)" />
+            <Stack.Screen name="(learner)" />
+            <Stack.Screen name="(screens)" />
+            <Stack.Screen name="admin" />
+            <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
+          </Stack>
+        </LearningProvider>
+      </ModalProvider>
     </ThemeProvider>
   );
 }

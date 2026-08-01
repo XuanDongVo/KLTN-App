@@ -7,6 +7,7 @@ import type {
   AdminUserDetail,
   AdminUserPage,
   CloudinarySignature,
+  ChallengeStatsResponse,
 } from '@/types/adminOperations';
 
 import { request } from './apiClient';
@@ -27,4 +28,5 @@ export const adminOperationsService = {
   getMedia: () => request<AdminMediaAsset[]>('/api/admin/media'),
   getMediaSignature: (fileName: string, contentType: string) => request<CloudinarySignature>('/api/admin/media/signature', json('POST', { fileName, contentType })),
   registerMedia: (body: Omit<AdminMediaAsset, 'id' | 'createdAt'>) => request<AdminMediaAsset>('/api/admin/media', json('POST', body)),
+  getChallengeStats: () => request<ChallengeStatsResponse>('/api/admin/challenges/stats'),
 };

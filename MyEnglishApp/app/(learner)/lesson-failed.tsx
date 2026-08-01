@@ -6,7 +6,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ActionButton } from '@/components/ui/ActionButton';
 import { Theme } from '@/constants/Theme';
-import { styles } from './lesson-failed.styles';
+import { styles } from '@/styles/(learner)/lesson-failed.styles';
 
 export default function LessonFailedScreen() {
   const params = useLocalSearchParams<{ lessonId: string; level?: string }>();

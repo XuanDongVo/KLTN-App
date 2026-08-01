@@ -7,7 +7,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ActionButton } from '@/components/ui/ActionButton';
 import { Theme } from '@/constants/Theme';
-import { styles } from './index.styles';
+import { styles } from '@/styles/index.styles';
 
 const greetingImage = require('@/assets/images/lessons/greetings.png');
 

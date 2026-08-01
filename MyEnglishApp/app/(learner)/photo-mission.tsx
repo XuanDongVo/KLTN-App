@@ -6,7 +6,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { PhotoMissionActivity } from '@/components/activities/PhotoMissionActivity';
 import { Theme } from '@/constants/Theme';
-import { styles } from './photo-mission.styles';
+import { styles } from '@/styles/(learner)/photo-mission.styles';
 
 export default function PhotoMissionScreen() {
   const router = useRouter();

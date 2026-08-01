@@ -12,7 +12,7 @@ import { useLearning } from '@/context/LearningContext';
 import { curriculumService, resolveCurriculumMediaUrl } from '@/services/curriculumService';
 import type { BackendLearningPath, BackendLevelCode, BackendLevelSummary, BackendUnitSummary } from '@/types/backendCurriculum';
 import type { Lesson } from '@/types/learning';
-import { styles } from './index.styles';
+import { styles } from '@/styles/(tabs)/index.styles';
 
 const lessonIcons = ['hand-wave', 'human-handsup', 'account-group', 'party-popper', 'food-apple', 'home-heart', 'school', 'elephant', 'beach', 'city-variant'];
 const selectedLevelKey = '@fun-english/selected-level';
@@ -111,6 +111,17 @@ export default function HomeScreen() {
         </View>
         <Text style={styles.goalValue}>{state.dailyXp}/{state.dailyGoal} XP</Text>
       </View>
+      
+      <Pressable onPress={() => router.push('/(screens)/challenges')} style={{ backgroundColor: '#F0F9FF', padding: 15, borderRadius: 12, flexDirection: 'row', alignItems: 'center', marginBottom: 20, borderWidth: 1, borderColor: '#BAE6FD' }}>
+        <View style={{ backgroundColor: '#0EA5E9', width: 40, height: 40, borderRadius: 20, justifyContent: 'center', alignItems: 'center', marginRight: 15 }}>
+            <MaterialCommunityIcons name="trophy" size={24} color="#FFFFFF" />
+        </View>
+        <View style={{ flex: 1 }}>
+            <Text style={{ fontSize: 16, fontWeight: '700', color: '#0369A1' }}>Thử thách của bạn</Text>
+            <Text style={{ fontSize: 13, color: '#0284C7', marginTop: 2 }}>Tham gia thử thách để nhận thêm phần thưởng!</Text>
+        </View>
+        <MaterialCommunityIcons name="chevron-right" size={24} color="#0284C7" />
+      </Pressable>
 
       <View style={styles.levelTabs}>
         {levels.map((level) => {

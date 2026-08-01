@@ -1,14 +1,16 @@
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { Theme } from '@/constants/Theme';
 import { pickAndUploadAdminImage } from '@/services/adminMediaUpload';
 import { adminOperationsService } from '@/services/adminOperationsService';
 import type { AdminMediaAsset } from '@/types/adminOperations';
-import { styles } from './index.styles';
+import { styles } from '@/styles/admin/media/index.styles';
+import { useModal } from "@/context/ModalContext";
 
 export default function AdminMediaScreen() {
+  const { showAlert } = useModal();
   const [assets, setAssets] = useState<AdminMediaAsset[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
@@ -25,7 +27,7 @@ export default function AdminMediaScreen() {
   const upload = async () => {
     setUploading(true);
     try { const asset = await pickAndUploadAdminImage(); if (asset) setAssets((current) => [asset, ...current]); }
-    catch (reason) { Alert.alert('Không tải được ảnh', reason instanceof Error ? reason.message : 'Đã xảy ra lỗi không xác định.'); }
+    catch (reason) { showAlert('Không tải được ảnh', reason instanceof Error ? reason.message : 'Đã xảy ra lỗi không xác định.'); }
     finally { setUploading(false); }
   };
 

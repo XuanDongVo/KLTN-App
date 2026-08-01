@@ -7,7 +7,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Theme } from '@/constants/Theme';
 import { useLearning } from '@/context/LearningContext';
 import { curriculumService } from '@/services/curriculumService';
-import { styles } from './profile.styles';
+import { styles } from '@/styles/(tabs)/profile.styles';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function ProfileScreen() {
   const router = useRouter();
@@ -15,9 +16,11 @@ export default function ProfileScreen() {
   const [completed, setCompleted] = useState(0);
   const [total, setTotal] = useState(0);
   const [stars, setStars] = useState(0);
+  const [isVerified, setIsVerified] = useState(true);
   const level = Math.floor(state.xp / 100) + 1;
 
   useFocusEffect(useCallback(() => {
+    AsyncStorage.getItem('isVerified').then(val => setIsVerified(val === 'true')).catch(() => undefined);
     curriculumService.getSelectedPath().then((path) => {
       const lessons = path.units.flatMap((unit) => unit.lessons);
       setTotal(lessons.length);
@@ -28,7 +31,10 @@ export default function ProfileScreen() {
 
 
   return <SafeAreaView style={styles.safe} edges={['top']}><ScrollView contentContainerStyle={styles.content}>
-    <View style={styles.profileHeader}>
+    <View style={[styles.profileHeader, { position: 'relative' }]}>
+      <Pressable onPress={() => router.push('/(screens)/settings')} style={{ position: 'absolute', top: 16, right: 16, zIndex: 10 }}>
+        <MaterialCommunityIcons name="cog" size={28} color={Theme.colors.muted} />
+      </Pressable>
       <View style={styles.avatar}><MaterialCommunityIcons name="account" size={56} color={Theme.colors.blueDark} /></View>
       <Text style={styles.name}>English Explorer</Text>
       <Text style={styles.level}>Cấp độ {level}</Text>
@@ -53,6 +59,24 @@ export default function ProfileScreen() {
       <View style={styles.missionCopy}><Text style={styles.missionTitle}>Photo Mission</Text><Text style={styles.missionText}>Chụp hoặc chọn ảnh để tạo caption tiếng Anh</Text></View>
       <MaterialCommunityIcons name="chevron-right" size={25} color={Theme.colors.muted} />
     </Pressable>
+
+    {!isVerified && (
+        <View style={{ marginTop: 20, backgroundColor: '#FFF4E5', padding: 16, borderRadius: 16, borderWidth: 1, borderColor: '#FFE0B2' }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
+                <MaterialCommunityIcons name="shield-alert-outline" size={20} color={Theme.colors.coralDark} />
+                <Text style={{ fontSize: 15, fontWeight: '700', color: Theme.colors.ink, marginLeft: 8 }}>Chưa xác thực email</Text>
+            </View>
+            <Text style={{ fontSize: 13, color: Theme.colors.muted, marginBottom: 12, lineHeight: 20 }}>
+                Bạn chưa xác thực email. Xác thực ngay để nhận thông báo báo cáo tiến độ từ hệ thống.
+            </Text>
+            <Pressable 
+                onPress={() => router.push('/(auth)/verify?returnTo=profile')}
+                style={{ backgroundColor: Theme.colors.coral, paddingVertical: 10, borderRadius: 8, alignItems: 'center' }}
+            >
+                <Text style={{ color: '#FFF', fontWeight: '700', fontSize: 14 }}>Xác thực ngay</Text>
+            </Pressable>
+        </View>
+    )}
   </ScrollView></SafeAreaView>;
 }
 

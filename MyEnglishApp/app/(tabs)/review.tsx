@@ -7,7 +7,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Theme } from '@/constants/Theme';
 import { curriculumService } from '@/services/curriculumService';
 import type { BackendLessonSummary, BackendLevelCode } from '@/types/backendCurriculum';
-import { styles } from './review.styles';
+import { styles } from '@/styles/(tabs)/review.styles';
 
 export default function ReviewScreen() {
   const router = useRouter();

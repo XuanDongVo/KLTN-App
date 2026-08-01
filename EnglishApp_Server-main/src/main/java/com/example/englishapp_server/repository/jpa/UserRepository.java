@@ -11,6 +11,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 
@@ -22,6 +23,7 @@ public interface UserRepository extends JpaRepository<User, UUID> {
     User findByUsernameAndPasswordHash(String username, String passwordHash);
     User findByEmailAndPasswordHash(String email, String passwordHash);
     User findUserById(UUID id);
+    List<User> findByRoleAndAccountStatus(UserRole role, AccountStatus status);
 
     long countByRole(UserRole role);
     long countByRoleAndAccountStatus(UserRole role, AccountStatus status);

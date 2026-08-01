@@ -6,7 +6,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ActionButton } from '@/components/ui/ActionButton';
 import { Theme } from '@/constants/Theme';
-import { styles } from './lesson-complete.styles';
+import { styles } from '@/styles/(learner)/lesson-complete.styles';
 
 export default function LessonCompleteScreen() {
   const params = useLocalSearchParams<{ lessonId: string; correct: string; total: string; stars: string; xp: string; level?: string }>();

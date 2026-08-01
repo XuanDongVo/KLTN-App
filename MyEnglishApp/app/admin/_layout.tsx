@@ -6,7 +6,7 @@ import { Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-na
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Theme } from '@/constants/Theme';
-import { styles } from './_layout.styles';
+import { styles } from '@/styles/admin/_layout.styles';
 
 const links = [
   { path: '/admin', label: 'Tổng quan', icon: 'view-dashboard' },

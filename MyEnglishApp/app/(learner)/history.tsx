@@ -7,7 +7,7 @@ import { useRouter } from 'expo-router';
 
 import { Theme } from '@/constants/Theme';
 import { request, ServerResponse } from '@/services/apiClient';
-import { styles } from './history.styles';
+import { styles } from '@/styles/(learner)/history.styles';
 
 interface HistoryRecord {
   id: string;

@@ -8,7 +8,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { ActionButton } from '@/components/ui/ActionButton';
 import { Theme } from '@/constants/Theme';
 import { loginApi } from '@/services/authService';
-import { styles } from './login.styles';
+import { challengeService } from '@/services/challengeService';
+import { styles } from '@/styles/(auth)/login.styles';
 
 const greetingImage = require('@/assets/images/lessons/greetings.png');
 
@@ -33,8 +34,23 @@ export default function LoginScreen() {
         ['refreshToken', response.data.refreshToken],
         ['userRole', response.data.role],
         ['userEmail', email.trim()],
+        ['isVerified', String(response.data.isVerified)],
       ]);
-      router.replace(response.data.role === 'ADMIN' ? '/admin' : '/(tabs)');
+      
+      if (response.data.role === 'ADMIN') {
+        router.replace('/admin');
+      } else {
+        try {
+          const currentChallenge = await challengeService.getCurrentChallenge();
+          if (!currentChallenge) {
+            router.replace('/(screens)/challenges?isNewUser=1');
+          } else {
+            router.replace('/(tabs)');
+          }
+        } catch (e) {
+            router.replace('/(screens)/challenges?isNewUser=1');
+        }
+      }
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : 'Đăng nhập không thành công.');
     } finally {

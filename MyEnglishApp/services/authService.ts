@@ -7,6 +7,7 @@ export type ServerResponse<T> = {
 };
 
 export type AuthDto = {
+  isVerified: boolean;
   id: string;
   email: string;
   username: string;
