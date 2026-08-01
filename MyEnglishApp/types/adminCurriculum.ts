@@ -32,6 +32,8 @@ export type AdminActivity = {
   content: Record<string, unknown>;
   answer: Record<string, unknown>;
   sourceRefs: string[];
+  isDeleted?: boolean;
+  deletedAt?: string;
 };
 
 export type AdminLesson = {
@@ -43,6 +45,8 @@ export type AdminLesson = {
   estimatedMinutes: number;
   xpReward: number;
   coverImage: BackendMedia;
+  isDeleted?: boolean;
+  deletedAt?: string;
   activities: AdminActivity[];
 };
 
@@ -53,6 +57,8 @@ export type AdminUnit = {
   description?: string;
   order: number;
   coverImage: BackendMedia;
+  isDeleted?: boolean;
+  deletedAt?: string;
   lessons: AdminLesson[];
 };
 

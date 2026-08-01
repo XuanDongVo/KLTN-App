@@ -55,6 +55,11 @@ public class AdminCurriculumController {
         return ok(service.deleteUnit(unitId));
     }
 
+    @PostMapping("/units/{unitId}/restore")
+    public ResponseEntity<?> restoreUnit(@PathVariable Long unitId) {
+        return ok(service.restoreUnit(unitId));
+    }
+
     @PostMapping("/versions/{versionId}/units/reorder")
     public ResponseEntity<?> reorderUnits(@PathVariable Long versionId, @RequestBody ReorderRequest request) {
         return ok(service.reorderUnits(versionId, request));
@@ -75,6 +80,11 @@ public class AdminCurriculumController {
         return ok(service.deleteLesson(lessonId));
     }
 
+    @PostMapping("/lessons/{lessonId}/restore")
+    public ResponseEntity<?> restoreLesson(@PathVariable Long lessonId) {
+        return ok(service.restoreLesson(lessonId));
+    }
+
     @PostMapping("/units/{unitId}/lessons/reorder")
     public ResponseEntity<?> reorderLessons(@PathVariable Long unitId, @RequestBody ReorderRequest request) {
         return ok(service.reorderLessons(unitId, request));
@@ -93,6 +103,11 @@ public class AdminCurriculumController {
     @DeleteMapping("/activities/{activityId}")
     public ResponseEntity<?> deleteActivity(@PathVariable Long activityId) {
         return ok(service.deleteActivity(activityId));
+    }
+
+    @PostMapping("/activities/{activityId}/restore")
+    public ResponseEntity<?> restoreActivity(@PathVariable Long activityId) {
+        return ok(service.restoreActivity(activityId));
     }
 
     @PostMapping("/lessons/{lessonId}/activities/reorder")

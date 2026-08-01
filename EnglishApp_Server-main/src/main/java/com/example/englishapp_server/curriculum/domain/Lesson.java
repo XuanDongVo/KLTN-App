@@ -1,5 +1,7 @@
 package com.example.englishapp_server.curriculum.domain;
 
+import java.time.LocalDateTime;
+
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -49,4 +51,11 @@ public class Lesson {
 
     @Column(name = "xp_reward", nullable = false)
     private int xpReward;
+
+    @Column(name = "is_deleted", nullable = false)
+    @Builder.Default
+    private Boolean isDeleted = false;
+
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
 }

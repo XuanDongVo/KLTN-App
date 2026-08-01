@@ -211,6 +211,15 @@ export function AdminCurriculumWorkspace() {
       void execute(action);
     },
   });
+  const restore = (label: string, action: () => Promise<AdminCurriculumTree>) => setDialog({
+    title: `Khôi phục ${label}?`,
+    message: 'Nội dung này sẽ được khôi phục và tiếp tục hiển thị.',
+    confirmLabel: 'Khôi phục',
+    onConfirm: () => {
+      setDialog(undefined);
+      void execute(action);
+    },
+  });
   const move = <T extends { id: number }>(items: T[], id: number, direction: -1 | 1) => {
     const index = items.findIndex((item) => item.id === id);
     const target = index + direction;
@@ -267,7 +276,7 @@ export function AdminCurriculumWorkspace() {
           <View style={adminStyles.sectionHeading}><View><Text style={adminStyles.sectionTitle}>Cây nội dung</Text><Text style={adminStyles.sectionMeta}>{tree.units.length} unit trong {tree.versionCode}</Text></View>{editable ? <CommandButton icon="plus" label="Thêm unit" onPress={() => setEditor({ kind: 'unit' })} /> : null}</View>
           <View style={adminStyles.tree}>{tree.units.map((unit, unitIndex) => {
             const unitOpen = expandedUnits.has(unit.id);
-            return <View key={unit.id} style={adminStyles.unitSection}>
+            return <View key={unit.id} style={[adminStyles.unitSection, unit.isDeleted && { opacity: 0.5 }]}>
               <Pressable onPress={() => toggleSet(setExpandedUnits, unit.id)} style={adminStyles.unitHeader}>
                 <View style={adminStyles.orderBadge}><Text style={adminStyles.orderText}>{unitIndex + 1}</Text></View>
                 <View style={adminStyles.rowCopy}><Text style={adminStyles.unitTitle}>{unit.title}</Text><Text style={adminStyles.rowMeta}>{unit.lessons.length} lesson · {unit.code}</Text></View>
@@ -275,12 +284,13 @@ export function AdminCurriculumWorkspace() {
                   <IconButton compact icon="arrow-up" label="Đưa unit lên" disabled={unitIndex === 0} onPress={() => { const ids = move(tree.units, unit.id, -1); if (ids) void execute(() => adminCurriculumService.reorderUnits(tree.id, ids)); }} />
                   <IconButton compact icon="arrow-down" label="Đưa unit xuống" disabled={unitIndex === tree.units.length - 1} onPress={() => { const ids = move(tree.units, unit.id, 1); if (ids) void execute(() => adminCurriculumService.reorderUnits(tree.id, ids)); }} />
                   <IconButton compact icon="pencil" label="Sửa unit" onPress={() => setEditor({ kind: 'unit', unit })} />
-                  <IconButton compact danger icon="trash-can-outline" label="Xóa unit" onPress={() => remove('unit', async () => {
-                    const nextTree = await adminCurriculumService.deleteUnit(unit.id);
-                    const remaining = tree.units.filter((u) => u.id !== unit.id).map((u) => u.id);
-                    if (remaining.length > 0) return adminCurriculumService.reorderUnits(tree.id, remaining);
-                    return nextTree;
-                  })} />
+                  {unit.isDeleted ? (
+                    <IconButton compact icon="restore" label="Khôi phục unit" onPress={() => restore('unit', () => adminCurriculumService.restoreUnit(unit.id))} />
+                  ) : (
+                    <IconButton compact danger icon="trash-can-outline" label="Xóa unit" onPress={() => remove('unit', async () => {
+                      return await adminCurriculumService.deleteUnit(unit.id);
+                    })} />
+                  )}
                 </View> : null}
                 <MaterialCommunityIcons name={unitOpen ? 'chevron-up' : 'chevron-down'} size={25} color={Theme.colors.muted} />
               </Pressable>
@@ -289,7 +299,7 @@ export function AdminCurriculumWorkspace() {
                 {unit.lessons.map((lesson, lessonIndex) => {
                   const lessonOpen = expandedLessons.has(lesson.id);
                   return <View key={lesson.id} style={adminStyles.lessonSection}>
-                    <Pressable onPress={() => toggleSet(setExpandedLessons, lesson.id)} style={adminStyles.lessonRow}>
+                    <Pressable onPress={() => toggleSet(setExpandedLessons, lesson.id)} style={[adminStyles.lessonRow, lesson.isDeleted && { opacity: 0.5 }]}>
                       <View style={adminStyles.lessonOrder}><Text style={adminStyles.lessonOrderText}>{lessonIndex + 1}</Text></View>
                       <MaterialCommunityIcons name="book-open-page-variant" size={21} color={Theme.colors.blueDark} />
                       <View style={adminStyles.rowCopy}><Text style={adminStyles.lessonTitle}>{lesson.title}</Text><Text style={adminStyles.rowMeta}>{lesson.activities.length} hoạt động · {lesson.estimatedMinutes} phút · {lesson.xpReward} XP</Text></View>
@@ -297,18 +307,19 @@ export function AdminCurriculumWorkspace() {
                         <IconButton compact icon="arrow-up" label="Đưa lesson lên" disabled={lessonIndex === 0} onPress={() => { const ids = move(unit.lessons, lesson.id, -1); if (ids) void execute(() => adminCurriculumService.reorderLessons(unit.id, ids)); }} />
                         <IconButton compact icon="arrow-down" label="Đưa lesson xuống" disabled={lessonIndex === unit.lessons.length - 1} onPress={() => { const ids = move(unit.lessons, lesson.id, 1); if (ids) void execute(() => adminCurriculumService.reorderLessons(unit.id, ids)); }} />
                         <IconButton compact icon="pencil" label="Sửa lesson" onPress={() => setEditor({ kind: 'lesson', unitId: unit.id, lesson })} />
-                        <IconButton compact danger icon="trash-can-outline" label="Xóa lesson" onPress={() => remove('lesson', async () => {
-                          const nextTree = await adminCurriculumService.deleteLesson(lesson.id);
-                          const remaining = unit.lessons.filter((l) => l.id !== lesson.id).map((l) => l.id);
-                          if (remaining.length > 0) return adminCurriculumService.reorderLessons(unit.id, remaining);
-                          return nextTree;
-                        })} />
+                        {lesson.isDeleted ? (
+                          <IconButton compact icon="restore" label="Khôi phục lesson" onPress={() => restore('lesson', () => adminCurriculumService.restoreLesson(lesson.id))} />
+                        ) : (
+                          <IconButton compact danger icon="trash-can-outline" label="Xóa lesson" onPress={() => remove('lesson', async () => {
+                            return await adminCurriculumService.deleteLesson(lesson.id);
+                          })} />
+                        )}
                       </View> : null}
                       <MaterialCommunityIcons name={lessonOpen ? 'chevron-up' : 'chevron-down'} size={23} color={Theme.colors.muted} />
                     </Pressable>
                     {lessonOpen ? <View style={adminStyles.activityArea}>
                       <View style={adminStyles.activityAreaHeader}><Text style={adminStyles.objective}>{lesson.objective}</Text>{editable ? <CommandButton small icon="plus" label="Thêm hoạt động" onPress={() => setEditor({ kind: 'activity', lessonId: lesson.id })} /> : null}</View>
-                      {lesson.activities.map((activity, activityIndex) => <View key={activity.id} style={adminStyles.activityRow}>
+                      {lesson.activities.map((activity, activityIndex) => <View key={activity.id} style={[adminStyles.activityRow, activity.isDeleted && { opacity: 0.5 }]}>
                         <View style={adminStyles.activityIcon}><MaterialCommunityIcons name={activityTypes.find((item) => item.value === activity.type)?.icon as never ?? 'cards'} size={19} color={Theme.colors.violet} /></View>
                         <View style={adminStyles.rowCopy}><Text style={adminStyles.activityTitle}>{activityIndex + 1}. {activity.prompt}</Text><Text style={adminStyles.rowMeta}>{activityTypes.find((item) => item.value === activity.type)?.label} · {activity.stage} · {activity.xpReward} XP</Text></View>
                         <IconButton compact icon="eye-outline" label="Xem hoạt động" onPress={() => setEditor({ kind: 'preview', activity })} />
@@ -316,12 +327,13 @@ export function AdminCurriculumWorkspace() {
                           <IconButton compact icon="arrow-up" label="Đưa hoạt động lên" disabled={activityIndex === 0} onPress={() => { const ids = move(lesson.activities, activity.id, -1); if (ids) void execute(() => adminCurriculumService.reorderActivities(lesson.id, ids)); }} />
                           <IconButton compact icon="arrow-down" label="Đưa hoạt động xuống" disabled={activityIndex === lesson.activities.length - 1} onPress={() => { const ids = move(lesson.activities, activity.id, 1); if (ids) void execute(() => adminCurriculumService.reorderActivities(lesson.id, ids)); }} />
                           <IconButton compact icon="pencil" label="Sửa hoạt động" onPress={() => setEditor({ kind: 'activity', lessonId: lesson.id, activity })} />
-                          <IconButton compact danger icon="trash-can-outline" label="Xóa hoạt động" onPress={() => remove('hoạt động', async () => {
-                            const nextTree = await adminCurriculumService.deleteActivity(activity.id);
-                            const remaining = lesson.activities.filter((a) => a.id !== activity.id).map((a) => a.id);
-                            if (remaining.length > 0) return adminCurriculumService.reorderActivities(lesson.id, remaining);
-                            return nextTree;
-                          })} />
+                          {activity.isDeleted ? (
+                            <IconButton compact icon="restore" label="Khôi phục hoạt động" onPress={() => restore('hoạt động', () => adminCurriculumService.restoreActivity(activity.id))} />
+                          ) : (
+                            <IconButton compact danger icon="trash-can-outline" label="Xóa hoạt động" onPress={() => remove('hoạt động', async () => {
+                              return await adminCurriculumService.deleteActivity(activity.id);
+                            })} />
+                          )}
                         </View> : null}
                       </View>)}
                     </View> : null}

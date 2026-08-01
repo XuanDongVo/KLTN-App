@@ -2,6 +2,7 @@ package com.example.englishapp_server.curriculum.admin;
 
 import com.example.englishapp_server.curriculum.domain.*;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
@@ -40,6 +41,8 @@ public final class AdminCurriculumModels {
             String description,
             int order,
             MediaData coverImage,
+            Boolean isDeleted,
+            LocalDateTime deletedAt,
             List<LessonView> lessons
     ) {}
 
@@ -52,6 +55,8 @@ public final class AdminCurriculumModels {
             int estimatedMinutes,
             int xpReward,
             MediaData coverImage,
+            Boolean isDeleted,
+            LocalDateTime deletedAt,
             List<ActivityView> activities
     ) {}
 
@@ -66,7 +71,9 @@ public final class AdminCurriculumModels {
             int xpReward,
             Map<String, Object> content,
             Map<String, Object> answer,
-            List<String> sourceRefs
+            List<String> sourceRefs,
+            Boolean isDeleted,
+            LocalDateTime deletedAt
     ) {}
 
     public record DraftRequest(String versionCode, String title, String description) {}

@@ -151,14 +151,23 @@ public class AdminCurriculumService {
     public CurriculumTree deleteUnit(Long unitId) {
         LearningUnit unit = requireUnit(unitId);
         CurriculumVersion version = requireDraft(unit.getCurriculumVersion().getId());
-        List<Lesson> lessons = lessonRepository.findByLearningUnitIdOrderByOrderIndex(unitId);
-        List<LearningActivity> activities = lessons.stream()
-                .flatMap(lesson -> activityRepository.findByLessonIdOrderByOrderIndex(lesson.getId()).stream())
-                .toList();
-        if (!activities.isEmpty()) activityRepository.deleteAllInBatch(activities);
-        if (!lessons.isEmpty()) lessonRepository.deleteAllInBatch(lessons);
-        unitRepository.deleteAllInBatch(List.of(unit));
-        reindexUnits(version.getId());
+        
+        unit.setIsDeleted(true);
+        unit.setDeletedAt(LocalDateTime.now());
+        unitRepository.save(unit);
+        
+        return tree(version);
+    }
+
+    @Transactional
+    public CurriculumTree restoreUnit(Long unitId) {
+        LearningUnit unit = requireUnit(unitId);
+        CurriculumVersion version = requireDraft(unit.getCurriculumVersion().getId());
+        
+        unit.setIsDeleted(false);
+        unit.setDeletedAt(null);
+        unitRepository.save(unit);
+        
         return tree(version);
     }
 
@@ -203,10 +212,24 @@ public class AdminCurriculumService {
         Lesson lesson = requireLesson(lessonId);
         LearningUnit unit = lesson.getLearningUnit();
         CurriculumVersion version = requireDraft(unit.getCurriculumVersion().getId());
-        List<LearningActivity> activities = activityRepository.findByLessonIdOrderByOrderIndex(lessonId);
-        if (!activities.isEmpty()) activityRepository.deleteAllInBatch(activities);
-        lessonRepository.deleteAllInBatch(List.of(lesson));
-        reindexLessons(unit.getId());
+        
+        lesson.setIsDeleted(true);
+        lesson.setDeletedAt(LocalDateTime.now());
+        lessonRepository.save(lesson);
+        
+        return tree(version);
+    }
+
+    @Transactional
+    public CurriculumTree restoreLesson(Long lessonId) {
+        Lesson lesson = requireLesson(lessonId);
+        LearningUnit unit = lesson.getLearningUnit();
+        CurriculumVersion version = requireDraft(unit.getCurriculumVersion().getId());
+        
+        lesson.setIsDeleted(false);
+        lesson.setDeletedAt(null);
+        lessonRepository.save(lesson);
+        
         return tree(version);
     }
 
@@ -252,8 +275,24 @@ public class AdminCurriculumService {
         LearningActivity activity = requireActivity(activityId);
         Lesson lesson = activity.getLesson();
         CurriculumVersion version = requireDraft(lesson.getLearningUnit().getCurriculumVersion().getId());
-        activityRepository.deleteAllInBatch(List.of(activity));
-        reindexActivities(lesson.getId());
+        
+        activity.setIsDeleted(true);
+        activity.setDeletedAt(LocalDateTime.now());
+        activityRepository.save(activity);
+        
+        return tree(version);
+    }
+
+    @Transactional
+    public CurriculumTree restoreActivity(Long activityId) {
+        LearningActivity activity = requireActivity(activityId);
+        Lesson lesson = activity.getLesson();
+        CurriculumVersion version = requireDraft(lesson.getLearningUnit().getCurriculumVersion().getId());
+        
+        activity.setIsDeleted(false);
+        activity.setDeletedAt(null);
+        activityRepository.save(activity);
+        
         return tree(version);
     }
 
@@ -403,6 +442,8 @@ public class AdminCurriculumService {
                     .coverImageHeight(sourceUnit.getCoverImageHeight())
                     .coverImageAlt(sourceUnit.getCoverImageAlt())
                     .orderIndex(sourceUnit.getOrderIndex())
+                    .isDeleted(sourceUnit.getIsDeleted())
+                    .deletedAt(sourceUnit.getDeletedAt())
                     .build());
             for (Lesson sourceLesson : lessonRepository.findByLearningUnitIdOrderByOrderIndex(sourceUnit.getId())) {
                 Lesson targetLesson = lessonRepository.save(Lesson.builder()
@@ -417,6 +458,8 @@ public class AdminCurriculumService {
                         .orderIndex(sourceLesson.getOrderIndex())
                         .estimatedMinutes(sourceLesson.getEstimatedMinutes())
                         .xpReward(sourceLesson.getXpReward())
+                        .isDeleted(sourceLesson.getIsDeleted())
+                        .deletedAt(sourceLesson.getDeletedAt())
                         .build());
                 for (LearningActivity sourceActivity : activityRepository.findByLessonIdOrderByOrderIndex(sourceLesson.getId())) {
                     activityRepository.save(LearningActivity.builder()
@@ -431,6 +474,8 @@ public class AdminCurriculumService {
                             .answerJson(sourceActivity.getAnswerJson())
                             .sourceRefsJson(sourceActivity.getSourceRefsJson())
                             .xpReward(sourceActivity.getXpReward())
+                            .isDeleted(sourceActivity.getIsDeleted())
+                            .deletedAt(sourceActivity.getDeletedAt())
                             .build());
                 }
             }
@@ -453,18 +498,18 @@ public class AdminCurriculumService {
     private CurriculumTree tree(CurriculumVersion version) {
         List<UnitView> units = unitRepository.findByCurriculumVersionIdOrderByOrderIndex(version.getId()).stream()
                 .map(unit -> new UnitView(unit.getId(), unit.getCode(), unit.getTitle(), unit.getDescription(),
-                        unit.getOrderIndex(), media(unit),
+                        unit.getOrderIndex(), media(unit), unit.getIsDeleted(), unit.getDeletedAt(),
                         lessonRepository.findByLearningUnitIdOrderByOrderIndex(unit.getId()).stream()
                                 .map(lesson -> new LessonView(lesson.getId(), lesson.getCode(), lesson.getTitle(),
                                         lesson.getObjective(), lesson.getOrderIndex(), lesson.getEstimatedMinutes(),
-                                        lesson.getXpReward(), media(lesson),
+                                        lesson.getXpReward(), media(lesson), lesson.getIsDeleted(), lesson.getDeletedAt(),
                                         activityRepository.findByLessonIdOrderByOrderIndex(lesson.getId()).stream()
                                                 .map(activity -> new ActivityView(activity.getId(), activity.getCode(),
                                                         activity.getActivityType(), activity.getActivityStage(),
                                                         activity.getOrderIndex(), activity.getPromptText(),
                                                         activity.getInstructionText(), activity.getXpReward(),
                                                         readMap(activity.getContentJson()), readMap(activity.getAnswerJson()),
-                                                        readStringList(activity.getSourceRefsJson())))
+                                                        readStringList(activity.getSourceRefsJson()), activity.getIsDeleted(), activity.getDeletedAt()))
                                                 .toList()))
                                 .toList()))
                 .toList();
