@@ -33,9 +33,12 @@ export function ValidationPanel({ report, onClose }: { report: ValidationReport;
   return <View style={[styles.validation, report.valid ? styles.validationSuccess : styles.validationError]}><View style={styles.validationHeader}><MaterialCommunityIcons name={report.valid ? 'check-decagram' : 'alert-decagram'} size={24} color={report.valid ? Theme.colors.greenDark : Theme.colors.coralDark} /><Text style={styles.validationTitle}>{report.valid ? 'Bản nháp hợp lệ' : `${report.issues.length} lỗi cần sửa`}</Text><Pressable accessibilityLabel="Đóng kết quả" onPress={onClose} style={styles.iconTouch}><MaterialCommunityIcons name="close" size={20} color={Theme.colors.muted} /></Pressable></View>{report.issues.slice(0, 12).map((issue, index) => <View key={`${issue.path}-${index}`} style={styles.issueRow}><Text style={styles.issuePath}>{issue.path}</Text><Text style={styles.issueMessage}>{issue.message}</Text></View>)}</View>;
 }
 
-export function StatusBadge({ status }: { status: 'DRAFT' | 'PUBLISHED' | 'ARCHIVED' }) {
-  const label = status === 'DRAFT' ? 'BẢN NHÁP' : status === 'PUBLISHED' ? 'ĐÃ XUẤT BẢN' : 'LƯU TRỮ';
-  return <View style={[styles.statusBadge, status === 'DRAFT' ? styles.statusDraft : status === 'PUBLISHED' ? styles.statusPublished : styles.statusArchived]}><Text style={[styles.statusText, status === 'DRAFT' ? styles.statusDraftText : status === 'PUBLISHED' ? styles.statusPublishedText : styles.statusArchivedText]}>{label}</Text></View>;
+export function StatusBadge({ status }: { status: 'DRAFT' | 'PENDING' | 'REJECTED' | 'PUBLISHED' | 'ARCHIVED' }) {
+  const label = status === 'DRAFT' ? 'BẢN NHÁP' : status === 'PUBLISHED' ? 'ĐÃ XUẤT BẢN' : status === 'PENDING' ? 'CHỜ DUYỆT' : status === 'REJECTED' ? 'BỊ TỪ CHỐI' : 'LƯU TRỮ';
+  const bgStyle = status === 'DRAFT' ? styles.statusDraft : status === 'PUBLISHED' ? styles.statusPublished : status === 'PENDING' ? { backgroundColor: `${Theme.colors.blueDark}1A`, borderColor: Theme.colors.blueDark } : status === 'REJECTED' ? { backgroundColor: `${Theme.colors.coralDark}1A`, borderColor: Theme.colors.coralDark } : styles.statusArchived;
+  const textStyle = status === 'DRAFT' ? styles.statusDraftText : status === 'PUBLISHED' ? styles.statusPublishedText : status === 'PENDING' ? { color: Theme.colors.blueDark } : status === 'REJECTED' ? { color: Theme.colors.coralDark } : styles.statusArchivedText;
+  
+  return <View style={[styles.statusBadge, bgStyle]}><Text style={[styles.statusText, textStyle]}>{label}</Text></View>;
 }
 
 function CommandButton({ icon, label, onPress, disabled, primary, danger, small }: { icon: string; label: string; onPress: () => void; disabled?: boolean; primary?: boolean; danger?: boolean; small?: boolean }) {

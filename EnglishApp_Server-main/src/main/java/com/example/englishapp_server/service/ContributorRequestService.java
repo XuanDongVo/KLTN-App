@@ -9,6 +9,7 @@ import com.example.englishapp_server.entity.ContributorRequest;
 import com.example.englishapp_server.entity.User;
 import com.example.englishapp_server.repository.jpa.ContributorRequestRepository;
 import com.example.englishapp_server.repository.jpa.UserRepository;
+import com.example.englishapp_server.notification.NotificationService;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -21,14 +22,14 @@ public class ContributorRequestService {
 
     private final ContributorRequestRepository requestRepository;
     private final UserRepository userRepository;
-    private final ExpoPushNotificationService pushService;
+    private final NotificationService notificationService;
 
     public ContributorRequestService(ContributorRequestRepository requestRepository, 
                                      UserRepository userRepository,
-                                     ExpoPushNotificationService pushService) {
+                                     NotificationService notificationService) {
         this.requestRepository = requestRepository;
         this.userRepository = userRepository;
-        this.pushService = pushService;
+        this.notificationService = notificationService;
     }
 
     public ContributorRequestResponse submitRequest(UUID userId, CreateContributorRequest request) {
@@ -51,6 +52,16 @@ public class ContributorRequestService {
                 .build();
 
         contributorRequest = requestRepository.save(contributorRequest);
+        
+        // Notify all admins
+        List<User> admins = userRepository.findByRole(UserRole.ADMIN);
+        for (User admin : admins) {
+            notificationService.sendAndSaveNotification(admin,
+                    "Yêu cầu Contributor mới",
+                    "Người dùng " + user.getUsername() + " vừa gửi yêu cầu làm Contributor.",
+                    java.util.Map.of("type", "CONTRIBUTOR_APPLICATION", "requestId", contributorRequest.getId().toString()));
+        }
+
         return mapToResponse(contributorRequest, user);
     }
 
@@ -68,6 +79,13 @@ public class ContributorRequestService {
         });
     }
 
+    public List<ContributorRequestResponse> getUserRequests(UUID userId) {
+        User user = userRepository.findById(userId).orElse(null);
+        return requestRepository.findByUserIdOrderByCreatedAtDesc(userId).stream()
+                .map(req -> mapToResponse(req, user))
+                .collect(Collectors.toList());
+    }
+
     public ContributorRequestResponse reviewRequest(Long requestId, ReviewContributorRequest review) {
         ContributorRequest request = requestRepository.findById(requestId).orElseThrow(() -> new RuntimeException("Request not found"));
         if (request.getStatus() != ContributorRequestStatus.PENDING) {
@@ -81,22 +99,18 @@ public class ContributorRequestService {
             user.setRole(UserRole.CONTRIBUTOR);
             userRepository.save(user);
             
-            if (user.getExpoPushToken() != null) {
-                pushService.sendPushNotification(user.getExpoPushToken(), 
-                    "Yêu cầu đã được duyệt!", 
-                    "Chúc mừng! Bạn đã trở thành Contributor.", 
-                    java.util.Map.of("type", "CONTRIBUTOR_APPROVED"));
-            }
+            notificationService.sendAndSaveNotification(user, 
+                "Yêu cầu đã được duyệt!", 
+                "Chúc mừng! Bạn đã trở thành Contributor.", 
+                java.util.Map.of("type", "CONTRIBUTOR_APPROVED"));
         } else {
             request.setStatus(ContributorRequestStatus.REJECTED);
             request.setAdminFeedback(review.feedback());
             
-            if (user.getExpoPushToken() != null) {
-                pushService.sendPushNotification(user.getExpoPushToken(), 
-                    "Yêu cầu bị từ chối", 
-                    "Yêu cầu làm Contributor của bạn đã bị từ chối.", 
-                    java.util.Map.of("type", "CONTRIBUTOR_REJECTED"));
-            }
+            notificationService.sendAndSaveNotification(user, 
+                "Yêu cầu bị từ chối", 
+                "Yêu cầu làm Contributor của bạn đã bị từ chối.", 
+                java.util.Map.of("type", "CONTRIBUTOR_REJECTED"));
         }
 
         request = requestRepository.save(request);

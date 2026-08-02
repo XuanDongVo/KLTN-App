@@ -21,6 +21,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers("/api/auth/**", "/api/verify/**", "/error", "/api/curriculum/**", "/curriculum/**").permitAll()
+                        .requestMatchers("/api/admin/media/**").hasAnyRole("ADMIN", "CONTRIBUTOR")
                         .requestMatchers("/admin/**", "/api/admin/**").hasRole("ADMIN")
                         .anyRequest().authenticated())
                 .exceptionHandling(errors -> errors

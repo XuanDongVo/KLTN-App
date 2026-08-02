@@ -68,7 +68,7 @@ export function AdminCurriculumWorkspace({ service = adminCurriculumService, rol
   const selectedVersion = tree
     ? currentLevel?.versions.find((version) => version.id === tree.id)
     : undefined;
-  const editable = tree?.status === 'DRAFT';
+  const editable = tree?.status === 'DRAFT' || tree?.status === 'REJECTED';
   const load = async (levelCode = selectedLevel, preferredVersionId?: number) => {
     setLoading(true);
     setError('');
@@ -79,7 +79,7 @@ export function AdminCurriculumWorkspace({ service = adminCurriculumService, rol
       if (!level) throw new Error('Chưa có cấp độ curriculum.');
       setSelectedLevel(level.code);
       const chosen = level.versions.find((version) => version.id === preferredVersionId)
-        ?? level.versions.find((version) => version.status === 'DRAFT')
+        ?? level.versions.find((version) => version.status === 'DRAFT' || version.status === 'PENDING' || version.status === 'REJECTED')
         ?? level.versions.find((version) => version.status === 'PUBLISHED')
         ?? level.versions[0];
       if (!chosen) {
@@ -288,14 +288,23 @@ export function AdminCurriculumWorkspace({ service = adminCurriculumService, rol
               <Text style={adminStyles.versionCode}>{version.versionCode}</Text>
             </Pressable>)}
           </ScrollView>
-          {!currentLevel?.versions.some((version) => version.status === 'DRAFT') ? <CommandButton icon="source-branch-plus" label="Tạo bản nháp" onPress={createDraft} disabled={busy || !selectedVersion} /> : null}
+          {!currentLevel?.versions.some((version) => version.status === 'DRAFT' || version.status === 'PENDING' || version.status === 'REJECTED') ? <CommandButton icon="source-branch-plus" label="Tạo bản nháp" onPress={createDraft} disabled={busy || !selectedVersion} /> : null}
         </View>
         {tree ? <>
+          {tree.status === 'REJECTED' && tree.reviewFeedback ? (
+            <View style={[adminStyles.errorBand, { marginHorizontal: 20, marginTop: 12, borderRadius: 8, padding: 12 }]}>
+              <MaterialCommunityIcons name="alert-circle" size={24} color={Theme.colors.coralDark} style={{ marginTop: 2 }} />
+              <View style={{ flex: 1, marginLeft: 8 }}>
+                <Text style={[adminStyles.errorText, { fontWeight: 'bold', marginBottom: 4 }]}>Bản nháp bị từ chối</Text>
+                <Text style={adminStyles.errorText}>{tree.reviewFeedback}</Text>
+              </View>
+            </View>
+          ) : null}
           <View style={adminStyles.versionHeader}>
             <View style={adminStyles.versionCopy}><View style={adminStyles.versionTitleRow}><Text style={adminStyles.versionTitle}>{tree.title}</Text><StatusBadge status={tree.status} /></View><Text style={adminStyles.versionDescription}>{tree.description || 'Chưa có mô tả.'}</Text></View>
             <View style={adminStyles.versionActions}>
               {editable ? <IconButton icon="pencil" label="Sửa thông tin phiên bản" onPress={() => setEditor({ kind: 'version' })} /> : null}
-              {tree.status !== 'PUBLISHED' && tree.status !== 'PENDING' ? <CommandButton danger icon="trash-can-outline" label={tree.status === 'DRAFT' ? 'Hủy bản nháp' : 'Xóa bản lưu trữ'} onPress={() => void requestVersionDelete()} disabled={busy} /> : null}
+              {tree.status !== 'PUBLISHED' && tree.status !== 'PENDING' ? <CommandButton danger icon="trash-can-outline" label={tree.status === 'DRAFT' || tree.status === 'REJECTED' ? 'Hủy bản nháp' : 'Xóa bản lưu trữ'} onPress={() => void requestVersionDelete()} disabled={busy} /> : null}
             </View>
           </View>
           {report ? <ValidationPanel report={report} onClose={() => setReport(undefined)} /> : null}

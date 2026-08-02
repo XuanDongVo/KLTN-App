@@ -11,7 +11,7 @@ import { curriculumService } from '@/services/curriculumService';
 import { styles } from '@/styles/(tabs)/profile.styles';
 export default function ProfileScreen() {
   const router = useRouter();
-  const { state } = useLearning();
+  const { state, refreshProfile } = useLearning();
   const [completed, setCompleted] = useState(0);
   const [total, setTotal] = useState(0);
   const [stars, setStars] = useState(0);
@@ -20,13 +20,17 @@ export default function ProfileScreen() {
 
   useFocusEffect(useCallback(() => {
     AsyncStorage.getItem('isVerified').then(val => setIsVerified(val === 'true')).catch(() => undefined);
+    
+    // Refresh avatar, xp, streak từ backend
+    refreshProfile();
+
     curriculumService.getSelectedPath().then((path) => {
       const lessons = path.units.flatMap((unit) => unit.lessons);
       setTotal(lessons.length);
       setCompleted(lessons.filter((lesson) => lesson.progressStatus === 'COMPLETED').length);
       setStars(lessons.reduce((sum, lesson) => sum + lesson.stars, 0));
     }).catch(() => undefined);
-  }, []));
+  }, [refreshProfile]));
 
 
   return <SafeAreaView style={styles.safe} edges={['top']}><ScrollView contentContainerStyle={styles.content}>

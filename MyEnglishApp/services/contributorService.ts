@@ -24,6 +24,10 @@ export const getCurrentContributorRequest = () => {
   return request<ContributorRequestDto | null>('/api/learner/contributor/request/current');
 };
 
+export const getAllMyContributorRequests = () => {
+  return request<ContributorRequestDto[]>('/api/learner/contributor/requests/all');
+};
+
 // Admin endpoints
 export const getAllContributorRequests = () => {
   return request<ContributorRequestDto[]>('/api/admin/contributor/requests');

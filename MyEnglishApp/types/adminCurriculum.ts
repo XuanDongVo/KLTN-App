@@ -50,6 +50,18 @@ export type AdminLesson = {
   activities: AdminActivity[];
 };
 
+export interface AdminCurriculumVersion {
+  id: number;
+  versionCode: string;
+  title: string;
+  description: string;
+  status: 'DRAFT' | 'PENDING' | 'REJECTED' | 'PUBLISHED' | 'ARCHIVED';
+  reviewFeedback?: string;
+  unitCount: number;
+  lessonCount: number;
+  activityCount: number;
+}
+
 export type AdminUnit = {
   id: number;
   code: string;
@@ -62,13 +74,14 @@ export type AdminUnit = {
   lessons: AdminLesson[];
 };
 
-export type AdminCurriculumTree = {
+export interface AdminCurriculumTree {
   id: number;
-  levelCode: BackendLevelCode;
+  levelCode: string;
   versionCode: string;
   title: string;
-  description?: string;
-  status: CurriculumLifecycle;
+  description: string;
+  status: 'DRAFT' | 'PENDING' | 'REJECTED' | 'PUBLISHED' | 'ARCHIVED';
+  reviewFeedback?: string;
   units: AdminUnit[];
 };
 

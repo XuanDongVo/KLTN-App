@@ -1,12 +1,13 @@
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useFocusEffect, useRouter } from 'expo-router';
-import React, { useCallback, useRef, useState } from 'react';
+import { useFocusEffect, useRouter, useLocalSearchParams } from 'expo-router';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { LessonPathNode } from '@/components/learner/LessonPathNode';
 import { StatusStrip } from '@/components/learner/StatusStrip';
+import { NotificationBell } from '@/components/NotificationBell';
 import { Theme } from '@/constants/Theme';
 import { useLearning } from '@/context/LearningContext';
 import { curriculumService, resolveCurriculumMediaUrl } from '@/services/curriculumService';
@@ -33,6 +34,27 @@ export default function HomeScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const hasChosenExpandedUnit = useRef(false);
   const hasRestoredLevel = useRef(false);
+  const { levelCode, highlightUnitCode } = useLocalSearchParams<{ levelCode: BackendLevelCode; highlightUnitCode?: string }>();
+
+  // If levelCode is passed from notification, update selectedLevel
+  useEffect(() => {
+    if (levelCode && (levelCode === 'PRE_A1_STARTERS' || levelCode === 'A1_MOVERS' || levelCode === 'A2_FLYERS')) {
+      setSelectedLevel(levelCode);
+      void AsyncStorage.setItem(selectedLevelKey, levelCode);
+      hasChosenExpandedUnit.current = false; // Reset to allow highlight
+    }
+  }, [levelCode]);
+
+  // If path is already loaded and highlightUnitCode changes, expand it immediately
+  useEffect(() => {
+    if (path && highlightUnitCode) {
+      const currentUnit = path.units.find((unit) => unit.code === highlightUnitCode);
+      if (currentUnit) {
+        setExpandedUnits(new Set([currentUnit.id]));
+        hasChosenExpandedUnit.current = true;
+      }
+    }
+  }, [highlightUnitCode, path]);
 
   const loadPath = useCallback(async () => {
     setRefreshing(true);
@@ -53,10 +75,19 @@ export default function HomeScreen() {
       ]);
       setLevels(nextLevels);
       setPath(nextPath);
-      if (!hasChosenExpandedUnit.current) {
-        const currentUnit = nextPath.units.find((unit) => unit.lessons.some((lesson) => lesson.unlocked && lesson.progressStatus !== 'COMPLETED'))
-          ?? nextPath.units.find((unit) => unit.lessons.some((lesson) => lesson.unlocked))
-          ?? nextPath.units[0];
+      
+      if (!hasChosenExpandedUnit.current || highlightUnitCode) {
+        let currentUnit;
+        if (highlightUnitCode) {
+          currentUnit = nextPath.units.find((unit) => unit.code === highlightUnitCode);
+        }
+        
+        if (!currentUnit) {
+          currentUnit = nextPath.units.find((unit) => unit.lessons.some((lesson) => lesson.unlocked && lesson.progressStatus !== 'COMPLETED'))
+            ?? nextPath.units.find((unit) => unit.lessons.some((lesson) => lesson.unlocked))
+            ?? nextPath.units[0];
+        }
+        
         setExpandedUnits(currentUnit ? new Set([currentUnit.id]) : new Set());
         hasChosenExpandedUnit.current = true;
       }
@@ -66,7 +97,7 @@ export default function HomeScreen() {
     } finally {
       setRefreshing(false);
     }
-  }, [selectedLevel]);
+  }, [selectedLevel, highlightUnitCode]);
 
   useFocusEffect(useCallback(() => {
     void loadPath();
@@ -100,7 +131,10 @@ export default function HomeScreen() {
         <Text style={styles.eyebrow}>{selectedLevel.replaceAll('_', ' ')}</Text>
         <Text style={styles.greeting}>Sẵn sàng học nào!</Text>
       </View>
-      <StatusStrip />
+      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+        <NotificationBell />
+        <StatusStrip />
+      </View>
     </View>
     <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
       <View style={styles.goalBand}>

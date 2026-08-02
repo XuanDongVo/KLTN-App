@@ -133,6 +133,19 @@ public class ContributorCurriculumController {
         return ok(submitted);
     }
 
+    @GetMapping("/versions/{versionId}/delete-check")
+    public ResponseEntity<?> checkDelete(@PathVariable Long versionId) {
+        return ok(service.checkVersionDelete(versionId));
+    }
+
+    @DeleteMapping("/versions/{versionId}")
+    public ResponseEntity<?> deleteVersion(@RequestAttribute("userId") String userId, @PathVariable Long versionId) {
+        VersionDeleteResult result = service.deleteVersion(versionId);
+        auditService.record(UUID.fromString(userId), "CURRICULUM_VERSION_DELETED", "CURRICULUM_VERSION",
+                result.versionId().toString(), result.versionCode());
+        return ok(result);
+    }
+
     private ResponseEntity<?> ok(Object data) {
         return ResponseEntity.ok(ServerResponse.success(data));
     }

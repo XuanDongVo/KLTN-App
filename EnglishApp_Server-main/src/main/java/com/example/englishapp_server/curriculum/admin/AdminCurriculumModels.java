@@ -17,6 +17,7 @@ public final class AdminCurriculumModels {
             String title,
             String description,
             LifecycleStatus status,
+            String reviewFeedback,
             int unitCount,
             int lessonCount,
             int activityCount
@@ -29,6 +30,7 @@ public final class AdminCurriculumModels {
             String title,
             String description,
             LifecycleStatus status,
+            String reviewFeedback,
             List<UnitView> units
     ) {}
 

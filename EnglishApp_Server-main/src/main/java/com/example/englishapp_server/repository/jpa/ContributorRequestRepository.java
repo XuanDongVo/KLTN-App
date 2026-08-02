@@ -11,5 +11,6 @@ import java.util.UUID;
 @Repository
 public interface ContributorRequestRepository extends JpaRepository<ContributorRequest, Long> {
     List<ContributorRequest> findByUserId(UUID userId);
+    List<ContributorRequest> findByUserIdOrderByCreatedAtDesc(UUID userId);
     Optional<ContributorRequest> findFirstByUserIdOrderByCreatedAtDesc(UUID userId);
 }

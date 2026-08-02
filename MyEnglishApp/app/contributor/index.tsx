@@ -4,7 +4,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, Text, useWindowDimensions, View } from 'react-native';
 
 import { Theme } from '@/constants/Theme';
-import { adminCurriculumService } from '@/services/adminCurriculumService';
+import { contributorCurriculumService } from '@/services/adminCurriculumService';
 import type { AdminLevelOverview } from '@/types/adminCurriculum';
 import { styles } from '@/styles/admin/index.styles';
 
@@ -17,7 +17,7 @@ export default function ContributorDashboardScreen() {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    adminCurriculumService.getLevels()
+    contributorCurriculumService.getLevels()
       .then((nextLevels) => setLevels(nextLevels))
       .catch((reason) => setError(reason instanceof Error ? reason.message : 'Không tải được dữ liệu chương trình học.'))
       .finally(() => setLoading(false));

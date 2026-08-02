@@ -45,20 +45,28 @@ export const usePushNotifications = (): PushNotificationState => {
         return;
       }
 
-      token = await Notifications.getExpoPushTokenAsync({
-        projectId: Constants.expoConfig?.extra?.eas?.projectId,
-      });
+      try {
+        token = await Notifications.getExpoPushTokenAsync({
+          projectId: Constants.expoConfig?.extra?.eas?.projectId,
+        });
+      } catch (error) {
+        console.log('Push notifications not supported in this environment (likely Expo Go on Android). Error:', error);
+      }
     } else {
       console.log('Must use physical device for Push Notifications');
     }
 
     if (Platform.OS === 'android') {
-      Notifications.setNotificationChannelAsync('default', {
-        name: 'default',
-        importance: Notifications.AndroidImportance.MAX,
-        vibrationPattern: [0, 250, 250, 250],
-        lightColor: '#FF231F7C',
-      });
+      try {
+        await Notifications.setNotificationChannelAsync('default', {
+          name: 'default',
+          importance: Notifications.AndroidImportance.MAX,
+          vibrationPattern: [0, 250, 250, 250],
+          lightColor: '#FF231F7C',
+        });
+      } catch (error) {
+        console.log('Could not set notification channel:', error);
+      }
     }
 
     return token;
@@ -81,10 +89,10 @@ export const usePushNotifications = (): PushNotificationState => {
 
     return () => {
       if (notificationListener.current) {
-        Notifications.removeSubscription(notificationListener.current);
+        notificationListener.current.remove();
       }
       if (responseListener.current) {
-        Notifications.removeSubscription(responseListener.current);
+        responseListener.current.remove();
       }
     };
   }, []);

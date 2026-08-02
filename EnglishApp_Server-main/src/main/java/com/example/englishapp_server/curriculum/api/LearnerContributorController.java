@@ -35,4 +35,9 @@ public class LearnerContributorController {
                 .map(req -> ResponseEntity.ok(ServerResponse.success(req)))
                 .orElse(ResponseEntity.ok(ServerResponse.success(null)));
     }
+
+    @GetMapping("/requests/all")
+    public ResponseEntity<?> getAllUserRequests(@RequestAttribute("userId") String userId) {
+        return ResponseEntity.ok(ServerResponse.success(requestService.getUserRequests(UUID.fromString(userId))));
+    }
 }

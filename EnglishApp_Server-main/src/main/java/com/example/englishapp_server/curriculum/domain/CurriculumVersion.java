@@ -41,6 +41,9 @@ public class CurriculumVersion {
     @Column(name = "source_manifest_json", nullable = false, columnDefinition = "LONGTEXT")
     private String sourceManifestJson;
 
+    @Column(name = "review_feedback", length = 500)
+    private String reviewFeedback;
+
     @Column(name = "imported_at", nullable = false)
     private LocalDateTime importedAt;
 }

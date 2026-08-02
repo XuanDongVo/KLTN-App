@@ -7,11 +7,13 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { Theme } from '@/constants/Theme';
 import { styles } from '@/styles/admin/_layout.styles';
+import { NotificationBell } from '@/components/NotificationBell';
 
 const links = [
   { path: '/admin', label: 'Tổng quan', icon: 'view-dashboard' },
   { path: '/admin/curriculum', label: 'Chương trình học', icon: 'book-education' },
   { path: '/admin/users', label: 'Người học', icon: 'account-group' },
+  { path: '/admin/requests', label: 'Duyệt Contributor', icon: 'shield-account' },
   { path: '/admin/media', label: 'Thư viện ảnh', icon: 'image-multiple' },
 ];
 
@@ -64,7 +66,8 @@ export default function AdminLayout() {
             <MaterialCommunityIcons name="menu" size={27} color={Theme.colors.ink} />
           </Pressable>
           <Text style={styles.mobileTitle}>Fun English Admin</Text>
-        </View> : null}
+          <NotificationBell />
+        </View> : <View style={{ position: 'absolute', top: 16, right: 16, zIndex: 10 }}><NotificationBell /></View>}
         <Slot />
       </View>
     </View>

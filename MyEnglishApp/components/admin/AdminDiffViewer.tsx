@@ -8,6 +8,8 @@ import { adminStyles, CommandButton } from './AdminShared';
 import type { AdminCurriculumTree, AdminUnit, AdminLesson, AdminActivity } from '@/types/adminCurriculum';
 import type { BackendLevelCode } from '@/types/backendCurriculum';
 
+import { useModal } from '@/context/ModalContext';
+
 interface DiffViewerProps {
   pendingVersionId: number;
   levelCode: BackendLevelCode;
@@ -17,6 +19,7 @@ interface DiffViewerProps {
 }
 
 export function AdminDiffViewer({ pendingVersionId, levelCode, service, onClose, onReviewComplete }: DiffViewerProps) {
+  const { showAlert } = useModal();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [publishedTree, setPublishedTree] = useState<AdminCurriculumTree>();
@@ -49,7 +52,7 @@ export function AdminDiffViewer({ pendingVersionId, levelCode, service, onClose,
 
   const handleReview = async (approve: boolean) => {
     if (!approve && !feedback.trim()) {
-      alert('Vui lòng nhập lý do từ chối.');
+      showAlert('Lỗi', 'Vui lòng nhập lý do từ chối.');
       return;
     }
     setSubmitting(true);
@@ -57,7 +60,7 @@ export function AdminDiffViewer({ pendingVersionId, levelCode, service, onClose,
       await service.reviewDraft(pendingVersionId, approve, feedback);
       onReviewComplete();
     } catch (e: any) {
-      alert(e.message || 'Có lỗi xảy ra.');
+      showAlert('Lỗi', e.message || 'Có lỗi xảy ra.');
       setSubmitting(false);
     }
   };
@@ -128,14 +131,18 @@ function TreeViewer({ tree }: { tree: AdminCurriculumTree }) {
   return (
     <View style={styles.tree}>
       {tree.units.map(unit => (
-        <View key={unit.id} style={styles.unit}>
-          <Text style={styles.unitTitle}>{unit.code} - {unit.title}</Text>
+        <View key={unit.id} style={[styles.unit, unit.isDeleted && { opacity: 0.5 }]}>
+          <Text style={[styles.unitTitle, unit.isDeleted && { textDecorationLine: 'line-through', color: Theme.colors.coralDark }]}>
+            {unit.code} - {unit.title} {unit.isDeleted ? '(Đã xóa)' : ''}
+          </Text>
           {unit.lessons.map(lesson => (
-            <View key={lesson.id} style={styles.lesson}>
-              <Text style={styles.lessonTitle}>{lesson.code} - {lesson.title}</Text>
+            <View key={lesson.id} style={[styles.lesson, lesson.isDeleted && { opacity: 0.5 }]}>
+              <Text style={[styles.lessonTitle, lesson.isDeleted && { textDecorationLine: 'line-through', color: Theme.colors.coralDark }]}>
+                {lesson.code} - {lesson.title} {lesson.isDeleted ? '(Đã xóa)' : ''}
+              </Text>
               {lesson.activities.map((activity, idx) => (
-                <Text key={activity.id} style={styles.activity}>
-                  {idx + 1}. [{activity.type}] {activity.prompt}
+                <Text key={activity.id} style={[styles.activity, activity.isDeleted && { textDecorationLine: 'line-through', color: Theme.colors.coral }]}>
+                  {idx + 1}. [{activity.type}] {activity.prompt} {activity.isDeleted ? '(Đã xóa)' : ''}
                 </Text>
               ))}
             </View>

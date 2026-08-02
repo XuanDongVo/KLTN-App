@@ -94,7 +94,7 @@ public class UploadController {
 
     private boolean hasUploadPermission(String folderName) {
         if (folderName == null) return false;
-        if (folderName.startsWith("users")) {
+        if (folderName.startsWith("users") || folderName.startsWith("contributor-requests")) {
             return true;
         }
         org.springframework.security.core.Authentication auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();

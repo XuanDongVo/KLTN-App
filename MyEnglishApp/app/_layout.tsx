@@ -4,7 +4,11 @@ import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
+import { LogBox } from 'react-native';
 import 'react-native-reanimated';
+
+// Bỏ qua cảnh báo lỗi từ Expo Go khi chạy Push Notifications (vẫn hoạt động bình thường trên app build thật)
+LogBox.ignoreLogs(['Android Push notifications (remote notifications) functionality']);
 
 import { useColorScheme } from '@/components/useColorScheme';
 import { LearningProvider } from '@/context/LearningContext';
@@ -26,8 +30,10 @@ SplashScreen.preventAutoHideAsync();
 import { usePushNotifications } from '@/hooks/usePushNotifications';
 import { sendPushTokenApi, refreshTokenApi } from '@/services/authService';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useRouter } from 'expo-router';
 
 export default function RootLayout() {
+  const router = useRouter();
   const [loaded, error] = useFonts({
     SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
   });
@@ -57,13 +63,46 @@ export default function RootLayout() {
                 await AsyncStorage.setItem('refreshToken', res.data.refreshToken);
               }
               await AsyncStorage.setItem('userRole', res.data.role);
-              // We could force reload here or show a toast
+              if (res.data.role === 'CONTRIBUTOR') {
+                router.replace('/contributor');
+              }
             }).catch(() => {});
           }
         });
       }
     }
   }, [notification]);
+
+  // Fallback Polling (just for DEV)
+  useEffect(() => {
+    if (__DEV__) {
+      const interval = setInterval(async () => {
+        try {
+          const rToken = await AsyncStorage.getItem('refreshToken');
+          const currentRole = await AsyncStorage.getItem('userRole');
+          if (rToken && currentRole === 'USER') {
+            // refresh token
+            const res = await refreshTokenApi(rToken);
+            if (res.data.role !== currentRole) {
+              await AsyncStorage.setItem('userToken', res.data.jwtToken);
+              if (res.data.refreshToken) {
+                await AsyncStorage.setItem('refreshToken', res.data.refreshToken);
+              }
+              await AsyncStorage.setItem('userRole', res.data.role);
+              console.log('Dev Polling: Đã tự động cập nhật role thành ' + res.data.role);
+              if (res.data.role === 'CONTRIBUTOR') {
+                router.replace('/contributor');
+              }
+            }
+          }
+        } catch (e) {
+          // Bỏ qua lỗi
+        }
+      }, 10000); // 10 giây check 1 lần
+      
+      return () => clearInterval(interval);
+    }
+  }, []);
 
   // Expo Router uses Error Boundaries to catch errors in the navigation tree.
   useEffect(() => {

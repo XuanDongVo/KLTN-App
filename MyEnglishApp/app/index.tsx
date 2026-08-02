@@ -19,7 +19,11 @@ export default function WelcomeScreen() {
     AsyncStorage.multiGet(['userToken', 'userRole']).then((entries) => {
       const token = entries[0][1];
       const role = entries[1][1];
-      if (token) router.replace(role === 'ADMIN' ? '/admin' : '/(tabs)');
+      if (token) {
+        if (role === 'ADMIN') router.replace('/admin');
+        else if (role === 'CONTRIBUTOR') router.replace('/contributor');
+        else router.replace('/(tabs)');
+      }
     });
   }, [router]);
 

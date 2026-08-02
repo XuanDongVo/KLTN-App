@@ -49,8 +49,11 @@ export default function AdminDashboardScreen() {
 
   return <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
     <View style={styles.heading}>
-      <View style={styles.headingCopy}><Text style={styles.eyebrow}>CURRICULUM OVERVIEW</Text><Text style={styles.title}>Trung tâm nội dung</Text><Text style={styles.subtitle}>Starters, Movers và Flyers trong cùng một quy trình biên soạn.</Text></View>
-      <View style={styles.headingActions}><Pressable style={styles.secondary} onPress={() => router.push('/admin/users')}><MaterialCommunityIcons name="account-group" size={20} color={Theme.colors.ink} /><Text style={styles.secondaryText}>Người học</Text></Pressable><Pressable style={styles.primary} onPress={() => router.push('/admin/curriculum')}><MaterialCommunityIcons name="pencil-ruler" size={20} color="#FFFFFF" /><Text style={styles.primaryText}>Curriculum CMS</Text></Pressable></View>
+      <View style={styles.headingCopy}><Text style={styles.eyebrow}>CURRICULUM OVERVIEW</Text><Text style={styles.title}>Trung tâm quản trị</Text><Text style={styles.subtitle}>Quản lý người học, nội dung và phê duyệt Contributor.</Text></View>
+      <View style={styles.headingActions}>
+        <Pressable style={styles.secondary} onPress={() => router.push('/admin/users')}><MaterialCommunityIcons name="account-group" size={20} color={Theme.colors.ink} /><Text style={styles.secondaryText}>Người học</Text></Pressable>
+        <Pressable style={styles.primary} onPress={() => router.push('/admin/curriculum')}><MaterialCommunityIcons name="pencil-ruler" size={20} color="#FFFFFF" /><Text style={styles.primaryText}>Curriculum CMS</Text></Pressable>
+      </View>
     </View>
 
     {error ? <View style={styles.error}><MaterialCommunityIcons name="alert-circle" size={22} color={Theme.colors.coralDark} /><Text style={styles.errorText}>{error}</Text></View> : null}

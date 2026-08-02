@@ -7,7 +7,7 @@ import jakarta.persistence.EntityManager;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import tools.jackson.databind.ObjectMapper;
-import com.example.englishapp_server.service.ExpoPushNotificationService;
+import com.example.englishapp_server.notification.NotificationService;
 import com.example.englishapp_server.repository.jpa.UserRepository;
 import com.example.englishapp_server.common.enums.UserRole;
 import com.example.englishapp_server.entity.User;
@@ -33,7 +33,7 @@ public class AdminCurriculumService {
     private final ActivityAttemptRepository attemptRepository;
     private final EntityManager entityManager;
     private final ObjectMapper objectMapper;
-    private final ExpoPushNotificationService pushService;
+    private final NotificationService notificationService;
     private final UserRepository userRepository;
 
     public AdminCurriculumService(CurriculumVersionRepository versionRepository,
@@ -45,7 +45,7 @@ public class AdminCurriculumService {
                                   ActivityAttemptRepository attemptRepository,
                                   EntityManager entityManager,
                                   ObjectMapper objectMapper,
-                                  ExpoPushNotificationService pushService,
+                                  NotificationService notificationService,
                                   UserRepository userRepository) {
         this.versionRepository = versionRepository;
         this.unitRepository = unitRepository;
@@ -56,7 +56,7 @@ public class AdminCurriculumService {
         this.attemptRepository = attemptRepository;
         this.entityManager = entityManager;
         this.objectMapper = objectMapper;
-        this.pushService = pushService;
+        this.notificationService = notificationService;
         this.userRepository = userRepository;
     }
 
@@ -78,7 +78,8 @@ public class AdminCurriculumService {
 
     @Transactional
     public CurriculumTree createDraft(LevelCode levelCode, DraftRequest request) {
-        boolean hasDraft = versionRepository.findByLevelCodeAndLifecycleStatus(levelCode, LifecycleStatus.DRAFT)
+        boolean hasDraft = versionRepository.findByLevelCodeAndLifecycleStatusIn(levelCode,
+                List.of(LifecycleStatus.DRAFT, LifecycleStatus.PENDING, LifecycleStatus.REJECTED))
                 .stream().findAny().isPresent();
         if (hasDraft) throw new IllegalStateException("Cấp độ này đã có một bản nháp");
 
@@ -364,7 +365,9 @@ public class AdminCurriculumService {
     @Transactional(readOnly = true)
     public VersionDeleteCheck checkVersionDelete(Long versionId) {
         CurriculumVersion version = requireVersion(versionId);
-        boolean isDraft = version.getLifecycleStatus() == LifecycleStatus.DRAFT;
+        boolean isDraft = version.getLifecycleStatus() == LifecycleStatus.DRAFT 
+                       || version.getLifecycleStatus() == LifecycleStatus.REJECTED
+                       || version.getLifecycleStatus() == LifecycleStatus.PENDING;
         
         long sessions = isDraft ? 0 : sessionRepository.countByCurriculumVersionId(versionId);
         long progressRows = isDraft ? 0 : progressRepository.countByCurriculumVersionId(versionId);
@@ -376,6 +379,9 @@ public class AdminCurriculumService {
         if (version.getLifecycleStatus() == LifecycleStatus.PUBLISHED) {
             canDelete = false;
             message = "Không thể xóa phiên bản đang xuất bản";
+        } else if (version.getLifecycleStatus() == LifecycleStatus.PENDING) {
+            canDelete = false;
+            message = "Không thể xóa bản nháp đang chờ duyệt";
         } else if (isDraft) {
             canDelete = true;
             message = "Bản nháp có thể được hủy vĩnh viễn";
@@ -416,16 +422,55 @@ public class AdminCurriculumService {
 
     @Transactional
     public CurriculumTree publish(Long versionId) {
-        CurriculumVersion draft = requireDraft(versionId);
+        CurriculumVersion draft = requireVersion(versionId);
+        if (draft.getLifecycleStatus() == LifecycleStatus.PUBLISHED || draft.getLifecycleStatus() == LifecycleStatus.ARCHIVED) {
+            throw new IllegalStateException("Chỉ có thể xuất bản bản nháp");
+        }
         ValidationReport report = validate(versionId);
         if (!report.valid()) {
             throw new IllegalStateException("Bản nháp còn " + report.issues().size() + " lỗi, chưa thể xuất bản");
         }
 
+        CurriculumTree publishedTree = null;
         for (CurriculumVersion published : versionRepository.findByLevelCodeAndLifecycleStatus(
                 draft.getLevelCode(), LifecycleStatus.PUBLISHED)) {
+            publishedTree = tree(published);
             published.setLifecycleStatus(LifecycleStatus.ARCHIVED);
             versionRepository.save(published);
+        }
+        
+        CurriculumTree draftTree = tree(draft);
+        List<String> changedUnitCodes = new ArrayList<>();
+        List<String> changedUnitTitles = new ArrayList<>();
+        
+        if (publishedTree != null) {
+            Map<String, UnitView> publishedUnits = new HashMap<>();
+            for (UnitView u : publishedTree.units()) {
+                publishedUnits.put(u.code(), u);
+            }
+            
+            for (UnitView u : draftTree.units()) {
+                if (Boolean.TRUE.equals(u.isDeleted())) continue;
+                UnitView oldUnit = publishedUnits.get(u.code());
+                if (oldUnit == null) {
+                    changedUnitCodes.add(u.code());
+                    changedUnitTitles.add(u.title());
+                } else {
+                    String json1 = writeJson(u).replaceAll("\"id\":\\d+,?", "");
+                    String json2 = writeJson(oldUnit).replaceAll("\"id\":\\d+,?", "");
+                    if (!json1.equals(json2)) {
+                        changedUnitCodes.add(u.code());
+                        changedUnitTitles.add(u.title());
+                    }
+                }
+            }
+        } else {
+            for (UnitView u : draftTree.units()) {
+                if (!Boolean.TRUE.equals(u.isDeleted())) {
+                    changedUnitCodes.add(u.code());
+                    changedUnitTitles.add(u.title());
+                }
+            }
         }
         
         String finalCode = draft.getVersionCode().replaceFirst("_DRAFT.*", "");
@@ -436,8 +481,25 @@ public class AdminCurriculumService {
         
         draft.setLifecycleStatus(LifecycleStatus.PUBLISHED);
         draft.setImportedAt(LocalDateTime.now());
-        draft.setChecksum(sha256(writeJson(tree(draft))));
-        return tree(versionRepository.save(draft));
+        draft.setChecksum(sha256(writeJson(draftTree)));
+        CurriculumTree resultTree = tree(versionRepository.save(draft));
+        
+        if (!changedUnitCodes.isEmpty()) {
+            List<User> users = userRepository.findByRole(UserRole.USER);
+            for (int i = 0; i < changedUnitCodes.size(); i++) {
+                String uCode = changedUnitCodes.get(i);
+                String uTitle = changedUnitTitles.get(i);
+                for (User user : users) {
+                    notificationService.sendAndSaveNotification(user,
+                        "Cập nhật giáo trình mới!",
+                        "Unit [" + uTitle + "] trong cấp độ " + draft.getLevelCode() + " vừa có cập nhật nội dung mới! Vào học ngay nhé.",
+                        Map.of("type", "CURRICULUM_UPDATED", "levelCode", draft.getLevelCode().name(), "unitCode", uCode)
+                    );
+                }
+            }
+        }
+        
+        return resultTree;
     }
 
     @Transactional
@@ -448,11 +510,12 @@ public class AdminCurriculumService {
             throw new IllegalStateException("Bản nháp còn " + report.issues().size() + " lỗi, chưa thể gửi duyệt");
         }
         draft.setLifecycleStatus(LifecycleStatus.PENDING);
+        draft.setReviewFeedback(null);
         
         // Notify Admins
-        List<User> admins = userRepository.findByRoleAndExpoPushTokenIsNotNull(UserRole.ADMIN);
+        List<User> admins = userRepository.findByRole(UserRole.ADMIN);
         for (User admin : admins) {
-            pushService.sendPushNotification(admin.getExpoPushToken(), 
+            notificationService.sendAndSaveNotification(admin, 
                 "Bản nháp cần duyệt", 
                 "Contributor vừa gửi một bản nháp mới (" + draft.getVersionCode() + ")", 
                 Map.of("type", "CURRICULUM_REVIEW", "versionId", versionId));
@@ -475,14 +538,15 @@ public class AdminCurriculumService {
             statusText = "Đã được phê duyệt và xuất bản";
         } else {
             version.setLifecycleStatus(LifecycleStatus.REJECTED);
+            version.setReviewFeedback(trimToNull(feedback));
             result = tree(versionRepository.save(version));
             statusText = "Đã bị từ chối";
         }
 
         // Notify Contributors
-        List<User> contributors = userRepository.findByRoleAndExpoPushTokenIsNotNull(UserRole.CONTRIBUTOR);
+        List<User> contributors = userRepository.findByRole(UserRole.CONTRIBUTOR);
         for (User contributor : contributors) {
-            pushService.sendPushNotification(contributor.getExpoPushToken(), 
+            notificationService.sendAndSaveNotification(contributor, 
                 "Kết quả duyệt bản nháp", 
                 "Bản nháp " + version.getVersionCode() + " " + statusText + (feedback != null && !feedback.isBlank() ? ". Lời nhắn: " + feedback : ""), 
                 Map.of("type", "CURRICULUM_REVIEW_RESULT", "versionId", versionId, "approved", approve));
@@ -553,7 +617,7 @@ public class AdminCurriculumService {
             for (Lesson lesson : lessons) activityCount += activityRepository.countByLessonId(lesson.getId());
         }
         return new VersionCard(version.getId(), version.getVersionCode(), version.getTitle(), version.getDescription(),
-                version.getLifecycleStatus(), units.size(), lessonCount, activityCount);
+                version.getLifecycleStatus(), version.getReviewFeedback(), units.size(), lessonCount, activityCount);
     }
 
     private CurriculumTree tree(CurriculumVersion version) {
@@ -575,7 +639,7 @@ public class AdminCurriculumService {
                                 .toList()))
                 .toList();
         return new CurriculumTree(version.getId(), version.getLevelCode(), version.getVersionCode(), version.getTitle(),
-                version.getDescription(), version.getLifecycleStatus(), units);
+                version.getDescription(), version.getLifecycleStatus(), version.getReviewFeedback(), units);
     }
 
     private void applyUnit(LearningUnit unit, UnitRequest request) {
@@ -703,10 +767,10 @@ public class AdminCurriculumService {
         return versionRepository.findById(id).orElseThrow(() -> new NoSuchElementException("Không tìm thấy phiên bản curriculum"));
     }
 
-    private CurriculumVersion requireDraft(Long id) {
-        CurriculumVersion version = requireVersion(id);
-        if (version.getLifecycleStatus() != LifecycleStatus.DRAFT) {
-            throw new SecurityException("Chỉ được chỉnh sửa bản nháp");
+    private CurriculumVersion requireDraft(Long versionId) {
+        CurriculumVersion version = requireVersion(versionId);
+        if (version.getLifecycleStatus() != LifecycleStatus.DRAFT && version.getLifecycleStatus() != LifecycleStatus.REJECTED) {
+            throw new IllegalStateException("Chỉ có thể sửa bản nháp");
         }
         return version;
     }
