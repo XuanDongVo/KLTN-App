@@ -7,6 +7,7 @@ export type ServerResponse<T> = {
 };
 
 export type AuthDto = {
+  verified: boolean;
   id: string;
   email: string;
   username: string;
@@ -34,10 +35,14 @@ async function post<T>(path: string, payload: object | string): Promise<ServerRe
 }
 
 export const loginApi = (email: string, password: string) => post<AuthDto>('/api/auth/login', { email, password });
-export const registerApi = (username: string, email: string, password: string) => post<any>('/api/auth/register', { username, email, password });
-export const sendVerifyAccountApi = (email: string) => post<any>('/api/verify/send/account', email);
-export const verifyAccountApi = (email: string, code: string) => post<any>('/api/verify/account', { email, code });
+export const registerApi = (username: string, email: string, password: string) => post<void>('/api/auth/register', { username, email, password });
+export const sendVerifyAccountApi = (email: string) => post<void>('/api/verify/send/account', email);
+export const verifyAccountApi = (email: string, code: string) => post<void>('/api/verify/account', { email, code });
 export const refreshTokenApi = (refreshToken: string) => post<AuthDto>('/api/auth/refresh', { refreshToken });
-export const logoutApi = (refreshToken: string) => post<any>('/api/auth/logout', { refreshToken });
-export const logoutAllApi = (email: string) => post<any>('/api/auth/logout-all', { email });
+export const sendResetPasswordApi = (email: string) => post<void>('/api/verify/send/reset-password', email);
+export const resetPasswordApi = (email: string, code: string, newPassword: string) => post<void>('/api/verify/reset-password', { email, code, newPassword });
+export const logoutApi = (refreshToken: string) => post<void>('/api/auth/logout', { refreshToken });
+export const logoutAllApi = (email: string) => post<void>('/api/auth/logout-all', { email });
 
+import { request } from './apiClient';
+export const sendPushTokenApi = (expoPushToken: string) => request<void>('/api/learner/profile/push-token', { method: 'POST', body: JSON.stringify({ expoPushToken }) });

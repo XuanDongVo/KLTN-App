@@ -47,7 +47,7 @@ public class ReviewSessionService {
 
         List<Long> completedLessonIds = new ArrayList<>();
         for (var p : completed) {
-            lessonRepository.findByCode(p.getLessonCode()).ifPresent(l -> completedLessonIds.add(l.getId()));
+            lessonRepository.findFirstByCodeOrderByIdDesc(p.getLessonCode()).ifPresent(l -> completedLessonIds.add(l.getId()));
         }
 
         if (!completedLessonIds.isEmpty()) {

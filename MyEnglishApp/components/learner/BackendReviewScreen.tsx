@@ -10,6 +10,7 @@ import { Theme } from '@/constants/Theme';
 import { useLearning } from '@/context/LearningContext';
 import { curriculumService, resolveCurriculumMediaUrl } from '@/services/curriculumService';
 import type { BackendAttemptResult, BackendLessonSession, BackendLessonSummary, BackendLevelCode } from '@/types/backendCurriculum';
+import { styles } from './BackendReviewScreen.styles';
 
 export function BackendReviewScreen() {
   const router = useRouter();
@@ -166,40 +167,3 @@ export function BackendReviewScreen() {
 function Meta({ icon, value }: { icon: string; value: string }) {
   return <View style={styles.meta}><MaterialCommunityIcons name={icon as never} size={19} color={Theme.colors.blueDark} /><Text style={styles.metaText}>{value}</Text></View>;
 }
-
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Theme.colors.background },
-  loading: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  top: { padding: 10 },
-  close: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
-  intro: { flexGrow: 1, padding: 24, paddingTop: 8, alignItems: 'center', justifyContent: 'center' },
-  introImage: { width: '100%', maxWidth: 520, maxHeight: 350, borderRadius: 8, backgroundColor: '#E8EEF2' },
-  eyebrow: { color: Theme.colors.greenDark, fontSize: 11, fontWeight: '900', marginTop: 20 },
-  title: { color: Theme.colors.ink, fontSize: 30, fontWeight: '900', textAlign: 'center', marginTop: 5 },
-  objective: { color: Theme.colors.muted, fontSize: 16, lineHeight: 23, textAlign: 'center', maxWidth: 430, marginTop: 9 },
-  metaRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, justifyContent: 'center', marginTop: 22 },
-  meta: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 10, paddingVertical: 8, borderRadius: 7, backgroundColor: '#EAF7FE' },
-  metaText: { color: Theme.colors.ink, fontSize: 12, fontWeight: '800' },
-  bottom: { padding: 16, borderTopWidth: 1, borderTopColor: Theme.colors.border, backgroundColor: '#FFFFFF' },
-  playerHeader: { height: 68, paddingHorizontal: 10, flexDirection: 'row', alignItems: 'center', gap: 10, borderBottomWidth: 1, borderBottomColor: Theme.colors.border, backgroundColor: '#FFFFFF' },
-  progress: { flex: 1, height: 12, borderRadius: 6, backgroundColor: '#DFE7EB', overflow: 'hidden' },
-  progressFill: { height: '100%', borderRadius: 6, backgroundColor: Theme.colors.green },
-  heart: { flexDirection: 'row', alignItems: 'center', gap: 3 },
-  heartText: { color: Theme.colors.coralDark, fontWeight: '900' },
-  content: { padding: 20, paddingBottom: 40, maxWidth: 660, width: '100%', alignSelf: 'center' },
-  counter: { color: Theme.colors.blueDark, fontSize: 11, fontWeight: '900' },
-  prompt: { color: Theme.colors.ink, fontSize: 23, lineHeight: 30, fontWeight: '900', marginTop: 7, marginBottom: 12 },
-  instruction: { color: Theme.colors.muted, lineHeight: 20, marginBottom: 14 },
-  feedback: { padding: 14, gap: 12, borderTopWidth: 1 },
-  feedbackCorrect: { backgroundColor: '#E5F8E8', borderTopColor: '#B8EAC0' },
-  feedbackWrong: { backgroundColor: '#FFF0EF', borderTopColor: '#FFD0CD' },
-  feedbackCopy: { flexDirection: 'row', gap: 10, alignItems: 'center', maxWidth: 660, width: '100%', alignSelf: 'center' },
-  feedbackText: { flex: 1 },
-  feedbackTitle: { fontSize: 17, fontWeight: '900' },
-  feedbackMeta: { color: Theme.colors.muted, fontSize: 12, marginTop: 2 },
-  error: { color: Theme.colors.coralDark, fontWeight: '700', textAlign: 'center', marginTop: 16 },
-  header: { alignSelf: 'flex-start' },
-  introTitle: { color: Theme.colors.ink, fontSize: 24, fontWeight: '900', textAlign: 'center', marginBottom: 12 },
-  introDescription: { color: Theme.colors.muted, fontSize: 16, lineHeight: 24, textAlign: 'center' },
-  spacer: { flex: 1, minHeight: 40 },
-});

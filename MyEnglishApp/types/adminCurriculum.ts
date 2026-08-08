@@ -1,6 +1,6 @@
 import type { BackendActivityType, BackendLevelCode, BackendMedia } from '@/types/backendCurriculum';
 
-export type CurriculumLifecycle = 'DRAFT' | 'PUBLISHED' | 'ARCHIVED';
+export type CurriculumLifecycle = 'DRAFT' | 'PENDING' | 'REJECTED' | 'PUBLISHED' | 'ARCHIVED';
 export type ActivityStage = 'LEARN' | 'PRACTISE' | 'CHECK';
 
 export type AdminVersionCard = {
@@ -32,6 +32,8 @@ export type AdminActivity = {
   content: Record<string, unknown>;
   answer: Record<string, unknown>;
   sourceRefs: string[];
+  isDeleted?: boolean;
+  deletedAt?: string;
 };
 
 export type AdminLesson = {
@@ -43,8 +45,22 @@ export type AdminLesson = {
   estimatedMinutes: number;
   xpReward: number;
   coverImage: BackendMedia;
+  isDeleted?: boolean;
+  deletedAt?: string;
   activities: AdminActivity[];
 };
+
+export interface AdminCurriculumVersion {
+  id: number;
+  versionCode: string;
+  title: string;
+  description: string;
+  status: 'DRAFT' | 'PENDING' | 'REJECTED' | 'PUBLISHED' | 'ARCHIVED';
+  reviewFeedback?: string;
+  unitCount: number;
+  lessonCount: number;
+  activityCount: number;
+}
 
 export type AdminUnit = {
   id: number;
@@ -53,16 +69,19 @@ export type AdminUnit = {
   description?: string;
   order: number;
   coverImage: BackendMedia;
+  isDeleted?: boolean;
+  deletedAt?: string;
   lessons: AdminLesson[];
 };
 
-export type AdminCurriculumTree = {
+export interface AdminCurriculumTree {
   id: number;
-  levelCode: BackendLevelCode;
+  levelCode: string;
   versionCode: string;
   title: string;
-  description?: string;
-  status: CurriculumLifecycle;
+  description: string;
+  status: 'DRAFT' | 'PENDING' | 'REJECTED' | 'PUBLISHED' | 'ARCHIVED';
+  reviewFeedback?: string;
   units: AdminUnit[];
 };
 

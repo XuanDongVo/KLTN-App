@@ -49,8 +49,8 @@ export async function request<T>(path: string, init?: RequestInit): Promise<T> {
         throw new Error('Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại.');
       }
     }
-  } catch (err: any) {
-    if (err.message && err.message.includes('Phiên đăng nhập')) throw err;
+  } catch (err: unknown) {
+    if (err instanceof Error && err.message.includes('Phiên đăng nhập')) throw err;
     throw new Error('Không thể kết nối máy chủ. Hãy kiểm tra Wi-Fi và địa chỉ API.');
   }
 

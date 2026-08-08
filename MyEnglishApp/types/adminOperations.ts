@@ -83,3 +83,16 @@ export type AdminMediaAsset = {
 export type CloudinarySignature = {
   fields: Record<string, string | number>;
 };
+
+export type ChallengeOptionStats = {
+  targetXp: number;
+  targetDays: number;
+  count: number;
+};
+
+export type ChallengeStatsResponse = {
+  totalActive: number;
+  totalCompleted: number;
+  totalFailed: number;
+  optionsStats: ChallengeOptionStats[];
+};

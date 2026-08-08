@@ -82,9 +82,15 @@ public class AdminUserService {
         }
 
         List<SessionView> sessions = sessionRepository.findTop20ByUserIdOrderByStartedAtDesc(userId).stream()
-                .map(session -> new SessionView(session.getId(), session.getLesson().getTitle(), session.getSessionStatus(),
-                        session.getCorrectAttempts(), session.getTotalAttempts(), session.getXpEarned(),
-                        session.getStartedAt(), session.getFinishedAt()))
+                .map(session -> new SessionView(
+                        session.getId(),
+                        session.getLesson() != null ? session.getLesson().getTitle() : "Bài học đã bị xoá",
+                        session.getSessionStatus(),
+                        session.getCorrectAttempts(),
+                        session.getTotalAttempts(),
+                        session.getXpEarned(),
+                        session.getStartedAt(),
+                        session.getFinishedAt()))
                 .toList();
         return new UserDetail(summary(user), progressRepository.sumStarsByUserId(userId), levelProgress, sessions);
     }

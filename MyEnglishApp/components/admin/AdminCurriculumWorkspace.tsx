@@ -1,4 +1,5 @@
 import { ActivityEditor, ActivityPreview } from './AdminActivityEditor';
+import { AdminDiffViewer } from './AdminDiffViewer';
 import { adminStyles, DialogState, EditorModal, Field, IconButton, CommandButton, StatusBadge, ValidationPanel, toggleSet, activityTypes, ConfirmationDialog, VersionDeleteEditor } from './AdminShared';
 import { messageOf, isVersionCode, versionCodeError, isContentCode, contentCodeError, isPositiveNumber, isNonNegativeNumber, isValidMedia, defaultMedia } from '@/utils/admin';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
@@ -20,6 +21,8 @@ import { AdminImageField } from '@/components/admin/AdminImageField';
 import { ActionButton } from '@/components/ui/ActionButton';
 import { Theme } from '@/constants/Theme';
 import { adminCurriculumService } from '@/services/adminCurriculumService';
+type UserRole = 'USER' | 'ADMIN' | 'CONTRIBUTOR';
+
 import type {
   ActivityRequest,
   ActivityStage,
@@ -41,6 +44,7 @@ type EditorState =
   | { kind: 'lesson'; unitId: number; lesson?: AdminLesson }
   | { kind: 'activity'; lessonId: number; activity?: AdminActivity }
   | { kind: 'preview'; activity: AdminActivity }
+  | { kind: 'review' }
   | { kind: 'deleteVersion'; check: VersionDeleteCheck }
   | undefined;
 const levelTones: Record<BackendLevelCode, string> = {
@@ -48,7 +52,7 @@ const levelTones: Record<BackendLevelCode, string> = {
   A1_MOVERS: Theme.colors.blue,
   A2_FLYERS: Theme.colors.violet,
 };
-export function AdminCurriculumWorkspace() {
+export function AdminCurriculumWorkspace({ service = adminCurriculumService, role = 'ADMIN' }: { service?: typeof adminCurriculumService, role?: UserRole }) {
   const [levels, setLevels] = useState<AdminLevelOverview[]>([]);
   const [selectedLevel, setSelectedLevel] = useState<BackendLevelCode>('PRE_A1_STARTERS');
   const [tree, setTree] = useState<AdminCurriculumTree>();
@@ -64,25 +68,25 @@ export function AdminCurriculumWorkspace() {
   const selectedVersion = tree
     ? currentLevel?.versions.find((version) => version.id === tree.id)
     : undefined;
-  const editable = tree?.status === 'DRAFT';
+  const editable = tree?.status === 'DRAFT' || tree?.status === 'REJECTED';
   const load = async (levelCode = selectedLevel, preferredVersionId?: number) => {
     setLoading(true);
     setError('');
     try {
-      const nextLevels = await adminCurriculumService.getLevels();
+      const nextLevels = await service.getLevels();
       setLevels(nextLevels);
       const level = nextLevels.find((item) => item.code === levelCode) ?? nextLevels[0];
       if (!level) throw new Error('Chưa có cấp độ curriculum.');
       setSelectedLevel(level.code);
       const chosen = level.versions.find((version) => version.id === preferredVersionId)
-        ?? level.versions.find((version) => version.status === 'DRAFT')
+        ?? level.versions.find((version) => version.status === 'DRAFT' || version.status === 'PENDING' || version.status === 'REJECTED')
         ?? level.versions.find((version) => version.status === 'PUBLISHED')
         ?? level.versions[0];
       if (!chosen) {
         setTree(undefined);
         return;
       }
-      const nextTree = await adminCurriculumService.getVersion(chosen.id);
+      const nextTree = await service.getVersion(chosen.id);
       setTree(nextTree);
       setExpandedUnits(new Set(nextTree.units.slice(0, 1).map((unit) => unit.id)));
       setExpandedLessons(new Set());
@@ -102,7 +106,7 @@ export function AdminCurriculumWorkspace() {
     setLoading(true);
     setError('');
     try {
-      const nextTree = await adminCurriculumService.getVersion(versionId);
+      const nextTree = await service.getVersion(versionId);
       setTree(nextTree);
       setExpandedUnits(new Set(nextTree.units.slice(0, 1).map((unit) => unit.id)));
       setExpandedLessons(new Set());
@@ -120,7 +124,7 @@ export function AdminCurriculumWorkspace() {
     onConfirm: () => {
       setDialog(undefined);
       void execute(async () => {
-        const next = await adminCurriculumService.createDraft(selectedLevel);
+        const next = await service.createDraft(selectedLevel);
         await load(selectedLevel, next.id);
       });
     },
@@ -146,7 +150,7 @@ export function AdminCurriculumWorkspace() {
     setBusy(true);
     setError('');
     try {
-      const nextReport = await adminCurriculumService.validate(tree.id);
+      const nextReport = await service.validate(tree.id);
       setReport(nextReport);
       return nextReport;
     } catch (reason) {
@@ -173,10 +177,25 @@ export function AdminCurriculumWorkspace() {
       onConfirm: () => {
         setDialog(undefined);
         void execute(async () => {
-          const next = await adminCurriculumService.publish(tree.id);
+          const next = await service.publish(tree.id);
           await load(next.levelCode, next.id);
         });
       },
+    });
+  };
+  const submitForReview = () => {
+    if (!tree) return;
+    setDialog({
+      title: 'Gửi duyệt bản nháp?',
+      message: 'Bản nháp sẽ được chuyển sang trạng thái CHỜ DUYỆT. Bạn không thể chỉnh sửa trong thời gian chờ.',
+      confirmLabel: 'Gửi duyệt',
+      onConfirm: () => {
+        setDialog(undefined);
+        void execute(async () => {
+          const next = await service.submitForReview(tree.id);
+          await load(next.levelCode, next.id);
+        });
+      }
     });
   };
   const requestVersionDelete = async () => {
@@ -184,7 +203,7 @@ export function AdminCurriculumWorkspace() {
     setBusy(true);
     setError('');
     try {
-      const check = await adminCurriculumService.checkVersionDelete(tree.id);
+      const check = await service.checkVersionDelete(tree.id);
       if (!check.canDelete) {
         setDialog({
           title: 'Không thể xóa phiên bản',
@@ -211,6 +230,15 @@ export function AdminCurriculumWorkspace() {
       void execute(action);
     },
   });
+  const restore = (label: string, action: () => Promise<AdminCurriculumTree>) => setDialog({
+    title: `Khôi phục ${label}?`,
+    message: 'Nội dung này sẽ được khôi phục và tiếp tục hiển thị.',
+    confirmLabel: 'Khôi phục',
+    onConfirm: () => {
+      setDialog(undefined);
+      void execute(action);
+    },
+  });
   const move = <T extends { id: number }>(items: T[], id: number, direction: -1 | 1) => {
     const index = items.findIndex((item) => item.id === id);
     const target = index + direction;
@@ -231,7 +259,14 @@ export function AdminCurriculumWorkspace() {
         </View>
         {editable ? <View style={adminStyles.headingActions}>
           <CommandButton icon="shield-check" label="Kiểm tra" onPress={() => void validate()} disabled={busy} />
-          <CommandButton icon="publish" label="Xuất bản" primary onPress={() => void publish()} disabled={busy} />
+          {role === 'ADMIN' ? (
+            <CommandButton icon="publish" label="Xuất bản" primary onPress={() => void publish()} disabled={busy} />
+          ) : (
+            <CommandButton icon="send-check" label="Gửi duyệt" primary onPress={() => void submitForReview()} disabled={busy} />
+          )}
+        </View> : null}
+        {role === 'ADMIN' && tree?.status === 'PENDING' ? <View style={adminStyles.headingActions}>
+          <CommandButton icon="file-compare" label="Duyệt bản nháp" primary onPress={() => setEditor({ kind: 'review' })} disabled={busy} />
         </View> : null}
       </View>
       <View style={adminStyles.levelTabs}>{levels.map((level) => {
@@ -253,34 +288,44 @@ export function AdminCurriculumWorkspace() {
               <Text style={adminStyles.versionCode}>{version.versionCode}</Text>
             </Pressable>)}
           </ScrollView>
-          {!currentLevel?.versions.some((version) => version.status === 'DRAFT') ? <CommandButton icon="source-branch-plus" label="Tạo bản nháp" onPress={createDraft} disabled={busy || !selectedVersion} /> : null}
+          {!currentLevel?.versions.some((version) => version.status === 'DRAFT' || version.status === 'PENDING' || version.status === 'REJECTED') ? <CommandButton icon="source-branch-plus" label="Tạo bản nháp" onPress={createDraft} disabled={busy || !selectedVersion} /> : null}
         </View>
         {tree ? <>
+          {tree.status === 'REJECTED' && tree.reviewFeedback ? (
+            <View style={[adminStyles.errorBand, { marginHorizontal: 20, marginTop: 12, borderRadius: 8, padding: 12 }]}>
+              <MaterialCommunityIcons name="alert-circle" size={24} color={Theme.colors.coralDark} style={{ marginTop: 2 }} />
+              <View style={{ flex: 1, marginLeft: 8 }}>
+                <Text style={[adminStyles.errorText, { fontWeight: 'bold', marginBottom: 4 }]}>Bản nháp bị từ chối</Text>
+                <Text style={adminStyles.errorText}>{tree.reviewFeedback}</Text>
+              </View>
+            </View>
+          ) : null}
           <View style={adminStyles.versionHeader}>
             <View style={adminStyles.versionCopy}><View style={adminStyles.versionTitleRow}><Text style={adminStyles.versionTitle}>{tree.title}</Text><StatusBadge status={tree.status} /></View><Text style={adminStyles.versionDescription}>{tree.description || 'Chưa có mô tả.'}</Text></View>
             <View style={adminStyles.versionActions}>
               {editable ? <IconButton icon="pencil" label="Sửa thông tin phiên bản" onPress={() => setEditor({ kind: 'version' })} /> : null}
-              {tree.status !== 'PUBLISHED' ? <CommandButton danger icon="trash-can-outline" label={tree.status === 'DRAFT' ? 'Hủy bản nháp' : 'Xóa bản lưu trữ'} onPress={() => void requestVersionDelete()} disabled={busy} /> : null}
+              {tree.status !== 'PUBLISHED' && tree.status !== 'PENDING' ? <CommandButton danger icon="trash-can-outline" label={tree.status === 'DRAFT' || tree.status === 'REJECTED' ? 'Hủy bản nháp' : 'Xóa bản lưu trữ'} onPress={() => void requestVersionDelete()} disabled={busy} /> : null}
             </View>
           </View>
           {report ? <ValidationPanel report={report} onClose={() => setReport(undefined)} /> : null}
           <View style={adminStyles.sectionHeading}><View><Text style={adminStyles.sectionTitle}>Cây nội dung</Text><Text style={adminStyles.sectionMeta}>{tree.units.length} unit trong {tree.versionCode}</Text></View>{editable ? <CommandButton icon="plus" label="Thêm unit" onPress={() => setEditor({ kind: 'unit' })} /> : null}</View>
           <View style={adminStyles.tree}>{tree.units.map((unit, unitIndex) => {
             const unitOpen = expandedUnits.has(unit.id);
-            return <View key={unit.id} style={adminStyles.unitSection}>
+            return <View key={unit.id} style={[adminStyles.unitSection, unit.isDeleted && { opacity: 0.5 }]}>
               <Pressable onPress={() => toggleSet(setExpandedUnits, unit.id)} style={adminStyles.unitHeader}>
                 <View style={adminStyles.orderBadge}><Text style={adminStyles.orderText}>{unitIndex + 1}</Text></View>
                 <View style={adminStyles.rowCopy}><Text style={adminStyles.unitTitle}>{unit.title}</Text><Text style={adminStyles.rowMeta}>{unit.lessons.length} lesson · {unit.code}</Text></View>
                 {editable ? <View style={adminStyles.rowTools}>
-                  <IconButton compact icon="arrow-up" label="Đưa unit lên" disabled={unitIndex === 0} onPress={() => { const ids = move(tree.units, unit.id, -1); if (ids) void execute(() => adminCurriculumService.reorderUnits(tree.id, ids)); }} />
-                  <IconButton compact icon="arrow-down" label="Đưa unit xuống" disabled={unitIndex === tree.units.length - 1} onPress={() => { const ids = move(tree.units, unit.id, 1); if (ids) void execute(() => adminCurriculumService.reorderUnits(tree.id, ids)); }} />
+                  <IconButton compact icon="arrow-up" label="Đưa unit lên" disabled={unitIndex === 0} onPress={() => { const ids = move(tree.units, unit.id, -1); if (ids) void execute(() => service.reorderUnits(tree.id, ids)); }} />
+                  <IconButton compact icon="arrow-down" label="Đưa unit xuống" disabled={unitIndex === tree.units.length - 1} onPress={() => { const ids = move(tree.units, unit.id, 1); if (ids) void execute(() => service.reorderUnits(tree.id, ids)); }} />
                   <IconButton compact icon="pencil" label="Sửa unit" onPress={() => setEditor({ kind: 'unit', unit })} />
-                  <IconButton compact danger icon="trash-can-outline" label="Xóa unit" onPress={() => remove('unit', async () => {
-                    const nextTree = await adminCurriculumService.deleteUnit(unit.id);
-                    const remaining = tree.units.filter((u) => u.id !== unit.id).map((u) => u.id);
-                    if (remaining.length > 0) return adminCurriculumService.reorderUnits(tree.id, remaining);
-                    return nextTree;
-                  })} />
+                  {unit.isDeleted ? (
+                    <IconButton compact icon="restore" label="Khôi phục unit" onPress={() => restore('unit', () => service.restoreUnit(unit.id))} />
+                  ) : (
+                    <IconButton compact danger icon="trash-can-outline" label="Xóa unit" onPress={() => remove('unit', async () => {
+                      return await service.deleteUnit(unit.id);
+                    })} />
+                  )}
                 </View> : null}
                 <MaterialCommunityIcons name={unitOpen ? 'chevron-up' : 'chevron-down'} size={25} color={Theme.colors.muted} />
               </Pressable>
@@ -289,39 +334,41 @@ export function AdminCurriculumWorkspace() {
                 {unit.lessons.map((lesson, lessonIndex) => {
                   const lessonOpen = expandedLessons.has(lesson.id);
                   return <View key={lesson.id} style={adminStyles.lessonSection}>
-                    <Pressable onPress={() => toggleSet(setExpandedLessons, lesson.id)} style={adminStyles.lessonRow}>
+                    <Pressable onPress={() => toggleSet(setExpandedLessons, lesson.id)} style={[adminStyles.lessonRow, lesson.isDeleted && { opacity: 0.5 }]}>
                       <View style={adminStyles.lessonOrder}><Text style={adminStyles.lessonOrderText}>{lessonIndex + 1}</Text></View>
                       <MaterialCommunityIcons name="book-open-page-variant" size={21} color={Theme.colors.blueDark} />
                       <View style={adminStyles.rowCopy}><Text style={adminStyles.lessonTitle}>{lesson.title}</Text><Text style={adminStyles.rowMeta}>{lesson.activities.length} hoạt động · {lesson.estimatedMinutes} phút · {lesson.xpReward} XP</Text></View>
                       {editable ? <View style={adminStyles.rowTools}>
-                        <IconButton compact icon="arrow-up" label="Đưa lesson lên" disabled={lessonIndex === 0} onPress={() => { const ids = move(unit.lessons, lesson.id, -1); if (ids) void execute(() => adminCurriculumService.reorderLessons(unit.id, ids)); }} />
-                        <IconButton compact icon="arrow-down" label="Đưa lesson xuống" disabled={lessonIndex === unit.lessons.length - 1} onPress={() => { const ids = move(unit.lessons, lesson.id, 1); if (ids) void execute(() => adminCurriculumService.reorderLessons(unit.id, ids)); }} />
+                        <IconButton compact icon="arrow-up" label="Đưa lesson lên" disabled={lessonIndex === 0} onPress={() => { const ids = move(unit.lessons, lesson.id, -1); if (ids) void execute(() => service.reorderLessons(unit.id, ids)); }} />
+                        <IconButton compact icon="arrow-down" label="Đưa lesson xuống" disabled={lessonIndex === unit.lessons.length - 1} onPress={() => { const ids = move(unit.lessons, lesson.id, 1); if (ids) void execute(() => service.reorderLessons(unit.id, ids)); }} />
                         <IconButton compact icon="pencil" label="Sửa lesson" onPress={() => setEditor({ kind: 'lesson', unitId: unit.id, lesson })} />
-                        <IconButton compact danger icon="trash-can-outline" label="Xóa lesson" onPress={() => remove('lesson', async () => {
-                          const nextTree = await adminCurriculumService.deleteLesson(lesson.id);
-                          const remaining = unit.lessons.filter((l) => l.id !== lesson.id).map((l) => l.id);
-                          if (remaining.length > 0) return adminCurriculumService.reorderLessons(unit.id, remaining);
-                          return nextTree;
-                        })} />
+                        {lesson.isDeleted ? (
+                          <IconButton compact icon="restore" label="Khôi phục lesson" onPress={() => restore('lesson', () => service.restoreLesson(lesson.id))} />
+                        ) : (
+                          <IconButton compact danger icon="trash-can-outline" label="Xóa lesson" onPress={() => remove('lesson', async () => {
+                            return await service.deleteLesson(lesson.id);
+                          })} />
+                        )}
                       </View> : null}
                       <MaterialCommunityIcons name={lessonOpen ? 'chevron-up' : 'chevron-down'} size={23} color={Theme.colors.muted} />
                     </Pressable>
                     {lessonOpen ? <View style={adminStyles.activityArea}>
                       <View style={adminStyles.activityAreaHeader}><Text style={adminStyles.objective}>{lesson.objective}</Text>{editable ? <CommandButton small icon="plus" label="Thêm hoạt động" onPress={() => setEditor({ kind: 'activity', lessonId: lesson.id })} /> : null}</View>
-                      {lesson.activities.map((activity, activityIndex) => <View key={activity.id} style={adminStyles.activityRow}>
+                      {lesson.activities.map((activity, activityIndex) => <View key={activity.id} style={[adminStyles.activityRow, activity.isDeleted && { opacity: 0.5 }]}>
                         <View style={adminStyles.activityIcon}><MaterialCommunityIcons name={activityTypes.find((item) => item.value === activity.type)?.icon as never ?? 'cards'} size={19} color={Theme.colors.violet} /></View>
                         <View style={adminStyles.rowCopy}><Text style={adminStyles.activityTitle}>{activityIndex + 1}. {activity.prompt}</Text><Text style={adminStyles.rowMeta}>{activityTypes.find((item) => item.value === activity.type)?.label} · {activity.stage} · {activity.xpReward} XP</Text></View>
                         <IconButton compact icon="eye-outline" label="Xem hoạt động" onPress={() => setEditor({ kind: 'preview', activity })} />
                         {editable ? <View style={adminStyles.rowTools}>
-                          <IconButton compact icon="arrow-up" label="Đưa hoạt động lên" disabled={activityIndex === 0} onPress={() => { const ids = move(lesson.activities, activity.id, -1); if (ids) void execute(() => adminCurriculumService.reorderActivities(lesson.id, ids)); }} />
-                          <IconButton compact icon="arrow-down" label="Đưa hoạt động xuống" disabled={activityIndex === lesson.activities.length - 1} onPress={() => { const ids = move(lesson.activities, activity.id, 1); if (ids) void execute(() => adminCurriculumService.reorderActivities(lesson.id, ids)); }} />
+                          <IconButton compact icon="arrow-up" label="Đưa hoạt động lên" disabled={activityIndex === 0} onPress={() => { const ids = move(lesson.activities, activity.id, -1); if (ids) void execute(() => service.reorderActivities(lesson.id, ids)); }} />
+                          <IconButton compact icon="arrow-down" label="Đưa hoạt động xuống" disabled={activityIndex === lesson.activities.length - 1} onPress={() => { const ids = move(lesson.activities, activity.id, 1); if (ids) void execute(() => service.reorderActivities(lesson.id, ids)); }} />
                           <IconButton compact icon="pencil" label="Sửa hoạt động" onPress={() => setEditor({ kind: 'activity', lessonId: lesson.id, activity })} />
-                          <IconButton compact danger icon="trash-can-outline" label="Xóa hoạt động" onPress={() => remove('hoạt động', async () => {
-                            const nextTree = await adminCurriculumService.deleteActivity(activity.id);
-                            const remaining = lesson.activities.filter((a) => a.id !== activity.id).map((a) => a.id);
-                            if (remaining.length > 0) return adminCurriculumService.reorderActivities(lesson.id, remaining);
-                            return nextTree;
-                          })} />
+                          {activity.isDeleted ? (
+                            <IconButton compact icon="restore" label="Khôi phục hoạt động" onPress={() => restore('hoạt động', () => service.restoreActivity(activity.id))} />
+                          ) : (
+                            <IconButton compact danger icon="trash-can-outline" label="Xóa hoạt động" onPress={() => remove('hoạt động', async () => {
+                              return await service.deleteActivity(activity.id);
+                            })} />
+                          )}
                         </View> : null}
                       </View>)}
                     </View> : null}
@@ -333,21 +380,25 @@ export function AdminCurriculumWorkspace() {
         </> : <View style={adminStyles.empty}><MaterialCommunityIcons name="book-plus-outline" size={48} color={Theme.colors.muted} /><Text style={adminStyles.emptyTitle}>Chưa có curriculum</Text></View>}
       </>}
     </ScrollView>
-    {editor?.kind === 'version' && tree ? <VersionEditor initial={tree} busy={busy} onClose={() => setEditor(undefined)} onSave={(body) => execute(() => adminCurriculumService.updateVersion(tree.id, body))} /> : null}
+    {editor?.kind === 'version' && tree ? <VersionEditor initial={tree} busy={busy} onClose={() => setEditor(undefined)} onSave={(body) => execute(() => service.updateVersion(tree.id, body))} /> : null}
     {editor?.kind === 'unit' && tree ? (() => {
       const programPrefix = tree.versionCode.split('_')[0] || 'APP';
       const autoCode = `${programPrefix}_U${(tree.units.length + 1).toString().padStart(2, '0')}`;
-      return <UnitEditor initial={editor.unit} autoCode={autoCode} fallbackMedia={tree.units[0]?.coverImage} busy={busy} onClose={() => setEditor(undefined)} onSave={(body) => execute(() => editor.unit ? adminCurriculumService.updateUnit(editor.unit.id, body) : adminCurriculumService.createUnit(tree.id, body))} />;
+      return <UnitEditor initial={editor.unit} autoCode={autoCode} fallbackMedia={tree.units[0]?.coverImage} busy={busy} onClose={() => setEditor(undefined)} onSave={(body) => execute(() => editor.unit ? service.updateUnit(editor.unit.id, body) : service.createUnit(tree.id, body))} />;
     })() : null}
     {editor?.kind === 'lesson' && tree ? (() => {
       const parentUnit = tree.units.find((unit) => unit.id === editor.unitId);
       const autoCode = parentUnit ? `${parentUnit.code}_L${(parentUnit.lessons.length + 1).toString().padStart(2, '0')}` : '';
-      return <LessonEditor initial={editor.lesson} autoCode={autoCode} fallbackMedia={parentUnit?.coverImage} busy={busy} onClose={() => setEditor(undefined)} onSave={(body) => execute(() => editor.lesson ? adminCurriculumService.updateLesson(editor.lesson.id, body) : adminCurriculumService.createLesson(editor.unitId, body))} />;
+      return <LessonEditor initial={editor.lesson} autoCode={autoCode} fallbackMedia={parentUnit?.coverImage} busy={busy} onClose={() => setEditor(undefined)} onSave={(body) => execute(() => editor.lesson ? service.updateLesson(editor.lesson.id, body) : service.createLesson(editor.unitId, body))} />;
     })() : null}
-    {editor?.kind === 'activity' && tree?.units.flatMap(u => u.lessons).find(l => l.id === editor.lessonId) ? <ActivityEditor lesson={tree.units.flatMap(u => u.lessons).find(l => l.id === editor.lessonId)!} initial={editor.activity} busy={busy} onClose={() => setEditor(undefined)} onSave={(body) => execute(() => editor.activity ? adminCurriculumService.updateActivity(editor.activity.id, body) : adminCurriculumService.createActivity(editor.lessonId, body))} /> : null}
+    {editor?.kind === 'activity' && tree?.units.flatMap(u => u.lessons).find(l => l.id === editor.lessonId) ? <ActivityEditor lesson={tree.units.flatMap(u => u.lessons).find(l => l.id === editor.lessonId)!} initial={editor.activity} busy={busy} onClose={() => setEditor(undefined)} onSave={(body) => execute(() => editor.activity ? service.updateActivity(editor.activity.id, body) : service.createActivity(editor.lessonId, body))} /> : null}
     {editor?.kind === 'preview' ? <ActivityPreview activity={editor.activity} onClose={() => setEditor(undefined)} /> : null}
+    {editor?.kind === 'review' && tree ? <AdminDiffViewer pendingVersionId={tree.id} levelCode={tree.levelCode} service={service} onClose={() => setEditor(undefined)} onReviewComplete={async () => {
+      setEditor(undefined);
+      await load(selectedLevel, tree.id);
+    }} /> : null}
     {editor?.kind === 'deleteVersion' && tree ? <VersionDeleteEditor check={editor.check} busy={busy} onClose={() => setEditor(undefined)} onDelete={() => execute(async () => {
-      await adminCurriculumService.deleteVersion(tree.id);
+      await service.deleteVersion(tree.id);
       await load(selectedLevel);
     })} /> : null}
     {dialog ? <ConfirmationDialog dialog={dialog} onClose={() => setDialog(undefined)} /> : null}
@@ -361,7 +412,7 @@ function VersionEditor({ initial, busy, onClose, onSave }: { initial: AdminCurri
   return <EditorModal title="Thông tin phiên bản" onClose={onClose}><Field label="Mã phiên bản" placeholder="VD: STARTERS_2026.6" hint="Đổi mã DRAFT thành mã phát hành trước khi lưu hoặc xuất bản." error={versionCodeError(versionCode)} value={versionCode} onChangeText={setVersionCode} autoCapitalize="characters" /><Field label="Tên chương trình" placeholder="VD: Pre-A1 Starters" value={title} onChangeText={setTitle} /><Field label="Mô tả" value={description} onChangeText={setDescription} multiline /><ActionButton label="Lưu thay đổi" icon="content-save" disabled={busy || !validCode || !title.trim()} onPress={() => onSave({ versionCode: versionCode.trim(), title: title.trim(), description: description.trim() })} /></EditorModal>;
 }
 function UnitEditor({ initial, autoCode, fallbackMedia, busy, onClose, onSave }: { initial?: AdminUnit; autoCode?: string; fallbackMedia?: BackendMedia; busy: boolean; onClose: () => void; onSave: (body: UnitRequest) => void }) {
-  const [code, setCode] = useState(initial?.code ?? autoCode ?? 'U_' + Math.random().toString(36).substring(2, 8).toUpperCase());
+  const [code, setCode] = useState(initial?.code || autoCode || 'U_' + Math.random().toString(36).substring(2, 8).toUpperCase());
   const [title, setTitle] = useState(initial?.title ?? '');
   const [description, setDescription] = useState(initial?.description ?? '');
   const [media, setMedia] = useState<BackendMedia>(initial?.coverImage ?? (initial ? fallbackMedia : undefined) ?? defaultMedia());
@@ -369,7 +420,7 @@ function UnitEditor({ initial, autoCode, fallbackMedia, busy, onClose, onSave }:
   return <EditorModal title={initial ? 'Sửa unit' : 'Thêm unit'} onClose={onClose}><Field label="Mã unit" placeholder="VD: STARTERS_U06" error={contentCodeError(code)} value={code} onChangeText={setCode} autoCapitalize="characters" /><Field label="Tên unit" placeholder="VD: Thiên nhiên quanh em" value={title} onChangeText={setTitle} /><Field label="Mô tả" placeholder="Mục tiêu và chủ đề chính của unit" value={description} onChangeText={setDescription} multiline /><AdminImageField value={media} onChange={setMedia} /><ActionButton label={initial ? 'Lưu unit' : 'Tạo unit'} icon="content-save" disabled={busy || !valid} onPress={() => onSave({ code: code.trim(), title: title.trim(), description: description.trim(), coverImage: media })} /></EditorModal>;
 }
 function LessonEditor({ initial, autoCode, fallbackMedia, busy, onClose, onSave }: { initial?: AdminLesson; autoCode?: string; fallbackMedia?: BackendMedia; busy: boolean; onClose: () => void; onSave: (body: LessonRequest) => void }) {
-  const [code, setCode] = useState(initial?.code ?? autoCode ?? 'L_' + Math.random().toString(36).substring(2, 8).toUpperCase());
+  const [code, setCode] = useState(initial?.code || autoCode || 'L_' + Math.random().toString(36).substring(2, 8).toUpperCase());
   const [title, setTitle] = useState(initial?.title ?? '');
   const [objective, setObjective] = useState(initial?.objective ?? '');
   const [minutes, setMinutes] = useState(initial ? String(initial.estimatedMinutes) : '');

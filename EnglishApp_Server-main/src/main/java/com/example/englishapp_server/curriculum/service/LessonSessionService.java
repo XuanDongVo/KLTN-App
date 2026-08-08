@@ -7,6 +7,7 @@ import com.example.englishapp_server.repository.jpa.UserRepository;
 import com.example.englishapp_server.repository.mongo.LearnerHistoryRepository;
 import com.example.englishapp_server.document.LearnerHistory;
 import com.example.englishapp_server.common.enums.ActivityType;
+import com.example.englishapp_server.service.LearnerProfileService;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 import org.springframework.stereotype.Service;
@@ -28,6 +29,7 @@ public class LessonSessionService {
     private final ObjectMapper objectMapper;
     private final LearnerCurriculumService curriculumService;
     private final LearnerHistoryRepository historyRepository;
+    private final LearnerProfileService profileService;
 
     public LessonSessionService(LessonRepository lessonRepository,
                                 LearningActivityRepository activityRepository,
@@ -37,7 +39,8 @@ public class LessonSessionService {
                                 UserRepository userRepository,
                                 ObjectMapper objectMapper,
                                 LearnerCurriculumService curriculumService,
-                                LearnerHistoryRepository historyRepository) {
+                                LearnerHistoryRepository historyRepository,
+                                LearnerProfileService profileService) {
         this.lessonRepository = lessonRepository;
         this.activityRepository = activityRepository;
         this.sessionRepository = sessionRepository;
@@ -47,6 +50,7 @@ public class LessonSessionService {
         this.objectMapper = objectMapper;
         this.curriculumService = curriculumService;
         this.historyRepository = historyRepository;
+        this.profileService = profileService;
     }
 
     @Transactional
@@ -111,6 +115,9 @@ public class LessonSessionService {
             if (selectedIds != null) selectedIdsJson = objectMapper.writeValueAsString(selectedIds);
         } catch (Exception e) {}
 
+        com.example.englishapp_server.entity.User user = profileService.getProfileAndRefresh(userId);
+        int currentHearts = user.getHearts() != null ? user.getHearts() : STARTING_HEARTS;
+
         LessonSession session = sessionRepository.save(LessonSession.builder()
                 .id(UUID.randomUUID())
                 .userId(userId)
@@ -119,8 +126,8 @@ public class LessonSessionService {
                 .currentActivityIndex(0)
                 .totalAttempts(0)
                 .correctAttempts(0)
-                .heartsStarted(STARTING_HEARTS)
-                .heartsRemaining(STARTING_HEARTS)
+                .heartsStarted(currentHearts)
+                .heartsRemaining(currentHearts)
                 .xpEarned(0)
                 .startedAt(LocalDateTime.now())
                 .selectedActivityIdsJson(selectedIdsJson)
@@ -170,6 +177,7 @@ public class LessonSessionService {
         session.setCurrentActivityIndex(session.getCurrentActivityIndex() + 1);
         if (!correct && activity.getActivityStage() == ActivityStage.CHECK) {
             session.setHeartsRemaining(Math.max(0, session.getHeartsRemaining() - 1));
+            profileService.deductHeart(userId);
         }
 
         if (activity.getId() > 0) {
@@ -203,10 +211,12 @@ public class LessonSessionService {
         int total = Math.max(1, session.getTotalAttempts());
         int score = (int) Math.round(session.getCorrectAttempts() * 100.0 / total);
         int stars = score >= 90 ? 3 : score >= 70 ? 2 : 1;
-        session.setSessionStatus(SessionStatus.COMPLETED);
+        
+        boolean failed = session.getHeartsRemaining() == 0;
+        session.setSessionStatus(failed ? SessionStatus.FAILED : SessionStatus.COMPLETED);
         session.setFinishedAt(LocalDateTime.now());
 
-        if (session.getLesson() != null) {
+        if (session.getLesson() != null && !failed) {
             LearnerLessonProgress progress = progressRepository.findByUserIdAndLessonCode(userId, session.getLesson().getCode())
                     .orElseThrow();
             boolean firstCompletion = progress.getProgressStatus() != ProgressStatus.COMPLETED;
@@ -224,11 +234,9 @@ public class LessonSessionService {
             }
         }
 
-        userRepository.findById(userId).ifPresent(user -> {
-            long current = user.getTotalScore() == null ? 0 : user.getTotalScore();
-            user.setTotalScore(current + session.getXpEarned());
-            userRepository.save(user);
-        });
+        if (session.getXpEarned() > 0) {
+            profileService.addXp(userId, session.getXpEarned());
+        }
 
         historyRepository.save(LearnerHistory.builder()
                 .userId(userId.toString())

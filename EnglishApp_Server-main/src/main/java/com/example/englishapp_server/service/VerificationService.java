@@ -97,6 +97,7 @@ public class VerificationService {
             VerifyResponse verifyResult = this.verifyCode(email, otp, VerificationType.VERIFY_USER);
             if (verifyResult.result()) {
                 targetUser.setVerified(true);
+                userRepository.save(targetUser);
             }
             return verifyResult;
         } catch (Exception e) {
@@ -116,6 +117,8 @@ public class VerificationService {
             VerifyResponse verifyResult = this.verifyCode(email, otp, VerificationType.RESET_PASSWORD);
             if (verifyResult.result()) {
                 targetUser.setPasswordHash(PasswordEncryption.hashPassword(newPassword));
+                targetUser.setVerified(true);
+                userRepository.save(targetUser);
             }
             return verifyResult;
         } catch (Exception e) {

@@ -2,6 +2,7 @@
   "expo": {
     "name": "Fun English",
     "slug": "fun-english-kids",
+    "scheme": "funenglish",
     "version": "1.0.0",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
@@ -38,7 +39,8 @@
           "microphonePermission": "Cho phép Fun English dùng micro để con luyện phát âm tiếng Anh.",
           "recordAudioAndroid": true
         }
-      ]
+      ],
+      "@react-native-community/datetimepicker"
     ]
   }
 }

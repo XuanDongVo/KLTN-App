@@ -12,6 +12,19 @@ import java.util.UUID;
 public final class AdminOperationsModels {
     private AdminOperationsModels() {}
 
+    public record ChallengeStatsResponse(
+            long totalActive,
+            long totalCompleted,
+            long totalFailed,
+            java.util.List<ChallengeOptionStats> optionsStats
+    ) {}
+
+    public record ChallengeOptionStats(
+            int targetXp,
+            int targetDays,
+            long count
+    ) {}
+
     public record Dashboard(
             long totalLearners,
             long activeLearners,

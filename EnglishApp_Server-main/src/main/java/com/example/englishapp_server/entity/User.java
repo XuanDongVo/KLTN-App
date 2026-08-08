@@ -4,6 +4,7 @@ import com.example.englishapp_server.common.enums.AccountStatus;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -30,6 +31,28 @@ public class User {
     private Long totalScore;
 
     @Builder.Default
+    @Column(name = "daily_goal")
+    private Integer dailyGoal = 20;
+
+    @Builder.Default
+    @Column(name = "daily_xp")
+    private Integer dailyXp = 0;
+
+    @Builder.Default
+    @Column(name = "streak")
+    private Integer streak = 0;
+
+    @Builder.Default
+    @Column(name = "hearts")
+    private Integer hearts = 5;
+
+    @Column(name = "last_active_date")
+    private LocalDate lastActiveDate;
+
+    @Column(name = "last_streak_date")
+    private LocalDate lastStreakDate;
+
+    @Builder.Default
     @Column(name = "role", nullable = false)
     @Enumerated(EnumType.ORDINAL)
     private UserRole role = UserRole.USER;
@@ -47,6 +70,9 @@ public class User {
 
     @Column(name = "last_login_at")
     private LocalDateTime lastLoginAt;
+
+    @Column(name = "expo_push_token")
+    private String expoPushToken;
 
     @PrePersist
     void initializeAccountMetadata() {

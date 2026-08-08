@@ -7,7 +7,8 @@ import { Theme } from '@/constants/Theme';
 import { adminCurriculumService } from '@/services/adminCurriculumService';
 import { adminOperationsService } from '@/services/adminOperationsService';
 import type { AdminLevelOverview } from '@/types/adminCurriculum';
-import type { AdminDashboard } from '@/types/adminOperations';
+import type { AdminDashboard, ChallengeStatsResponse } from '@/types/adminOperations';
+import { styles } from '@/styles/admin/index.styles';
 
 export default function AdminDashboardScreen() {
   const router = useRouter();
@@ -15,12 +16,21 @@ export default function AdminDashboardScreen() {
   const compact = width < 560;
   const [levels, setLevels] = useState<AdminLevelOverview[]>([]);
   const [dashboard, setDashboard] = useState<AdminDashboard>();
+  const [challengeStats, setChallengeStats] = useState<ChallengeStatsResponse>();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
   useEffect(() => {
-    Promise.all([adminCurriculumService.getLevels(), adminOperationsService.getDashboard()])
-      .then(([nextLevels, nextDashboard]) => { setLevels(nextLevels); setDashboard(nextDashboard); })
+    Promise.all([
+      adminCurriculumService.getLevels(), 
+      adminOperationsService.getDashboard(),
+      adminOperationsService.getChallengeStats()
+    ])
+      .then(([nextLevels, nextDashboard, nextChallengeStats]) => { 
+        setLevels(nextLevels); 
+        setDashboard(nextDashboard); 
+        setChallengeStats(nextChallengeStats);
+      })
       .catch((reason) => setError(reason instanceof Error ? reason.message : 'Không tải được tổng quan quản trị.'))
       .finally(() => setLoading(false));
   }, []);
@@ -39,8 +49,11 @@ export default function AdminDashboardScreen() {
 
   return <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
     <View style={styles.heading}>
-      <View style={styles.headingCopy}><Text style={styles.eyebrow}>CURRICULUM OVERVIEW</Text><Text style={styles.title}>Trung tâm nội dung</Text><Text style={styles.subtitle}>Starters, Movers và Flyers trong cùng một quy trình biên soạn.</Text></View>
-      <View style={styles.headingActions}><Pressable style={styles.secondary} onPress={() => router.push('/admin/users')}><MaterialCommunityIcons name="account-group" size={20} color={Theme.colors.ink} /><Text style={styles.secondaryText}>Người học</Text></Pressable><Pressable style={styles.primary} onPress={() => router.push('/admin/curriculum')}><MaterialCommunityIcons name="pencil-ruler" size={20} color="#FFFFFF" /><Text style={styles.primaryText}>Curriculum CMS</Text></Pressable></View>
+      <View style={styles.headingCopy}><Text style={styles.eyebrow}>CURRICULUM OVERVIEW</Text><Text style={styles.title}>Trung tâm quản trị</Text><Text style={styles.subtitle}>Quản lý người học, nội dung và phê duyệt Contributor.</Text></View>
+      <View style={styles.headingActions}>
+        <Pressable style={styles.secondary} onPress={() => router.push('/admin/users')}><MaterialCommunityIcons name="account-group" size={20} color={Theme.colors.ink} /><Text style={styles.secondaryText}>Người học</Text></Pressable>
+        <Pressable style={styles.primary} onPress={() => router.push('/admin/curriculum')}><MaterialCommunityIcons name="pencil-ruler" size={20} color="#FFFFFF" /><Text style={styles.primaryText}>Curriculum CMS</Text></Pressable>
+      </View>
     </View>
 
     {error ? <View style={styles.error}><MaterialCommunityIcons name="alert-circle" size={22} color={Theme.colors.coralDark} /><Text style={styles.errorText}>{error}</Text></View> : null}
@@ -53,6 +66,34 @@ export default function AdminDashboardScreen() {
       <Stat icon="play-circle" label="Tổng session" value={dashboard?.totalSessions ?? 0} color={Theme.colors.yellowDark} />
       <Stat icon="check-decagram" label="Lesson hoàn thành" value={dashboard?.completedLessons ?? 0} color={Theme.colors.greenDark} />
     </View>
+
+    <View style={styles.sectionHeading}><Text style={styles.sectionTitle}>Thử Thách Người Học</Text><Text style={styles.sectionMeta}>Tổng quan</Text></View>
+    <View style={{ flexDirection: 'row', gap: 15, marginBottom: 20 }}>
+        <View style={{ flex: 1, backgroundColor: '#E8F8EA', padding: 15, borderRadius: 12, alignItems: 'center' }}>
+            <Text style={{ fontSize: 24, fontWeight: '800', color: Theme.colors.greenDark }}>{challengeStats?.totalActive ?? 0}</Text>
+            <Text style={{ fontSize: 13, color: Theme.colors.green, marginTop: 4 }}>Đang tham gia</Text>
+        </View>
+        <View style={{ flex: 1, backgroundColor: '#EAF7FE', padding: 15, borderRadius: 12, alignItems: 'center' }}>
+            <Text style={{ fontSize: 24, fontWeight: '800', color: Theme.colors.blueDark }}>{challengeStats?.totalCompleted ?? 0}</Text>
+            <Text style={{ fontSize: 13, color: Theme.colors.blue, marginTop: 4 }}>Hoàn thành</Text>
+        </View>
+        <View style={{ flex: 1, backgroundColor: '#FFF1F0', padding: 15, borderRadius: 12, alignItems: 'center' }}>
+            <Text style={{ fontSize: 24, fontWeight: '800', color: Theme.colors.coralDark }}>{challengeStats?.totalFailed ?? 0}</Text>
+            <Text style={{ fontSize: 13, color: Theme.colors.coral, marginTop: 4 }}>Thất bại</Text>
+        </View>
+    </View>
+
+    {challengeStats && challengeStats.optionsStats.length > 0 && (
+      <View style={{ backgroundColor: '#F9FAFB', borderRadius: 12, padding: 15, marginBottom: 30 }}>
+        <Text style={{ fontSize: 15, fontWeight: '700', color: Theme.colors.ink, marginBottom: 10 }}>Phân bố lựa chọn Thử thách</Text>
+        {challengeStats.optionsStats.map((stat, idx) => (
+            <View key={idx} style={{ flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 8, borderBottomWidth: idx < challengeStats.optionsStats.length - 1 ? 1 : 0, borderBottomColor: Theme.colors.border }}>
+                <Text style={{ fontSize: 14, color: Theme.colors.ink }}>Gói {stat.targetXp} XP - {stat.targetDays} Ngày</Text>
+                <Text style={{ fontSize: 14, fontWeight: '700', color: Theme.colors.ink }}>{stat.count} người chọn</Text>
+            </View>
+        ))}
+      </View>
+    )}
 
     <View style={styles.curriculumBand}><View><Text style={styles.bandTitle}>Nội dung đang phục vụ</Text><Text style={styles.bandMeta}>{totals.units} unit · {totals.lessons} lesson · {totals.activities} activity</Text></View><Pressable onPress={() => router.push('/admin/media')} style={styles.mediaLink}><MaterialCommunityIcons name="image-multiple" size={19} color={Theme.colors.blueDark} /><Text style={styles.mediaLinkText}>Thư viện ảnh</Text></Pressable></View>
 
@@ -89,59 +130,3 @@ function auditLabel(action: string) {
 }
 
 function formatDate(value: string) { return new Date(value).toLocaleString('vi-VN', { dateStyle: 'short', timeStyle: 'short' }); }
-
-const styles = StyleSheet.create({
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: Theme.colors.background },
-  content: { padding: 20, paddingBottom: 50, maxWidth: 1120, width: '100%', alignSelf: 'center' },
-  heading: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', gap: 16, flexWrap: 'wrap' },
-  headingCopy: { flex: 1, minWidth: 250 },
-  headingActions: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  eyebrow: { color: Theme.colors.greenDark, fontSize: 11, fontWeight: '900' },
-  title: { color: Theme.colors.ink, fontSize: 28, fontWeight: '900', marginTop: 3 },
-  subtitle: { color: Theme.colors.muted, marginTop: 4 },
-  primary: { minHeight: 48, borderRadius: 7, borderBottomWidth: 4, borderBottomColor: Theme.colors.greenDark, backgroundColor: Theme.colors.green, flexDirection: 'row', alignItems: 'center', gap: 7, paddingHorizontal: 15 },
-  primaryText: { color: '#FFFFFF', fontWeight: '900' },
-  secondary: { minHeight: 48, borderRadius: 7, borderWidth: 1, borderBottomWidth: 3, borderColor: Theme.colors.border, backgroundColor: '#FFFFFF', flexDirection: 'row', alignItems: 'center', gap: 7, paddingHorizontal: 14 },
-  secondaryText: { color: Theme.colors.ink, fontWeight: '900' },
-  error: { minHeight: 56, flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 16, borderWidth: 1, borderColor: '#FFD0CD', borderRadius: 8, backgroundColor: '#FFF0EF', padding: 11 },
-  errorText: { color: Theme.colors.coralDark, fontWeight: '700' },
-  stats: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginTop: 24 },
-  stat: { minWidth: 160, flex: 1, minHeight: 126, borderWidth: 1, borderColor: Theme.colors.border, borderRadius: 8, backgroundColor: '#FFFFFF', padding: 15 },
-  statIcon: { width: 44, height: 44, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
-  statValue: { color: Theme.colors.ink, fontSize: 27, fontWeight: '900', marginTop: 8 },
-  statLabel: { color: Theme.colors.muted, fontWeight: '700', fontSize: 12 },
-  curriculumBand: { minHeight: 66, marginTop: 12, borderWidth: 1, borderColor: '#CBE8F5', borderRadius: 8, backgroundColor: '#EDF9FE', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10, padding: 12 },
-  bandTitle: { color: Theme.colors.ink, fontWeight: '900' },
-  bandMeta: { color: Theme.colors.muted, fontSize: 11, marginTop: 3 },
-  mediaLink: { minHeight: 40, flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 10 },
-  mediaLinkText: { color: Theme.colors.blueDark, fontWeight: '900', fontSize: 11 },
-  sectionHeading: { minHeight: 70, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginTop: 12 },
-  sectionTitle: { color: Theme.colors.ink, fontSize: 18, fontWeight: '900' },
-  sectionMeta: { color: Theme.colors.muted, fontSize: 11 },
-  levelList: { borderWidth: 1, borderColor: Theme.colors.border, borderRadius: 8, backgroundColor: '#FFFFFF', overflow: 'hidden' },
-  levelRow: { minHeight: 88, flexDirection: 'row', alignItems: 'center', gap: 12, padding: 13, borderBottomWidth: 1, borderBottomColor: Theme.colors.border },
-  levelRowCompact: { alignItems: 'stretch', flexDirection: 'column', gap: 7 },
-  levelMain: { flex: 1, minWidth: 0, flexDirection: 'row', alignItems: 'center', gap: 12 },
-  levelIcon: { width: 54, height: 54, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
-  levelCopy: { flex: 1, minWidth: 0 },
-  levelTitle: { color: Theme.colors.ink, fontSize: 16, fontWeight: '900' },
-  levelMeta: { color: Theme.colors.muted, fontSize: 11, marginTop: 4 },
-  versionCopy: { alignItems: 'flex-end', gap: 5 },
-  versionCopyCompact: { minHeight: 24, flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', paddingLeft: 66 },
-  versionCode: { color: Theme.colors.ink, fontSize: 10, fontWeight: '900' },
-  draftBadge: { borderRadius: 5, backgroundColor: '#FFF5CE', paddingHorizontal: 7, paddingVertical: 4 },
-  draftText: { color: Theme.colors.yellowDark, fontSize: 8, fontWeight: '900' },
-  publishedBadge: { borderRadius: 5, backgroundColor: '#E6F8E9', paddingHorizontal: 7, paddingVertical: 4 },
-  publishedText: { color: Theme.colors.greenDark, fontSize: 8, fontWeight: '900' },
-  auditList: { borderWidth: 1, borderColor: Theme.colors.border, borderRadius: 8, backgroundColor: '#FFFFFF', overflow: 'hidden' },
-  auditRow: { minHeight: 62, flexDirection: 'row', alignItems: 'center', gap: 9, borderBottomWidth: 1, borderBottomColor: Theme.colors.border, padding: 10 },
-  auditIcon: { width: 38, height: 38, borderRadius: 7, backgroundColor: '#EAF7FE', alignItems: 'center', justifyContent: 'center' },
-  auditCopy: { flex: 1, minWidth: 0 },
-  auditTitle: { color: Theme.colors.ink, fontSize: 12, fontWeight: '900' },
-  auditMeta: { color: Theme.colors.muted, fontSize: 10, marginTop: 3 },
-  emptyAudit: { color: Theme.colors.muted, textAlign: 'center', padding: 22 },
-  notice: { marginTop: 16, borderRadius: 8, backgroundColor: '#EAF7FE', borderWidth: 1, borderColor: '#C8E8F8', padding: 14, flexDirection: 'row', alignItems: 'center', gap: 10 },
-  noticeCopy: { flex: 1 },
-  noticeTitle: { color: Theme.colors.ink, fontWeight: '900' },
-  noticeText: { color: Theme.colors.muted, fontSize: 12, lineHeight: 17, marginTop: 2 },
-});

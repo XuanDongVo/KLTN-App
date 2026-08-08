@@ -1,17 +1,19 @@
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useFocusEffect, useRouter } from 'expo-router';
-import React, { useCallback, useRef, useState } from 'react';
+import { useFocusEffect, useRouter, useLocalSearchParams } from 'expo-router';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { LessonPathNode } from '@/components/learner/LessonPathNode';
 import { StatusStrip } from '@/components/learner/StatusStrip';
+import { NotificationBell } from '@/components/NotificationBell';
 import { Theme } from '@/constants/Theme';
 import { useLearning } from '@/context/LearningContext';
 import { curriculumService, resolveCurriculumMediaUrl } from '@/services/curriculumService';
 import type { BackendLearningPath, BackendLevelCode, BackendLevelSummary, BackendUnitSummary } from '@/types/backendCurriculum';
 import type { Lesson } from '@/types/learning';
+import { styles } from '@/styles/(tabs)/index.styles';
 
 const lessonIcons = ['hand-wave', 'human-handsup', 'account-group', 'party-popper', 'food-apple', 'home-heart', 'school', 'elephant', 'beach', 'city-variant'];
 const selectedLevelKey = '@fun-english/selected-level';
@@ -32,6 +34,27 @@ export default function HomeScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const hasChosenExpandedUnit = useRef(false);
   const hasRestoredLevel = useRef(false);
+  const { levelCode, highlightUnitCode } = useLocalSearchParams<{ levelCode: BackendLevelCode; highlightUnitCode?: string }>();
+
+  // If levelCode is passed from notification, update selectedLevel
+  useEffect(() => {
+    if (levelCode && (levelCode === 'PRE_A1_STARTERS' || levelCode === 'A1_MOVERS' || levelCode === 'A2_FLYERS')) {
+      setSelectedLevel(levelCode);
+      void AsyncStorage.setItem(selectedLevelKey, levelCode);
+      hasChosenExpandedUnit.current = false; // Reset to allow highlight
+    }
+  }, [levelCode]);
+
+  // If path is already loaded and highlightUnitCode changes, expand it immediately
+  useEffect(() => {
+    if (path && highlightUnitCode) {
+      const currentUnit = path.units.find((unit) => unit.code === highlightUnitCode);
+      if (currentUnit) {
+        setExpandedUnits(new Set([currentUnit.id]));
+        hasChosenExpandedUnit.current = true;
+      }
+    }
+  }, [highlightUnitCode, path]);
 
   const loadPath = useCallback(async () => {
     setRefreshing(true);
@@ -52,10 +75,19 @@ export default function HomeScreen() {
       ]);
       setLevels(nextLevels);
       setPath(nextPath);
-      if (!hasChosenExpandedUnit.current) {
-        const currentUnit = nextPath.units.find((unit) => unit.lessons.some((lesson) => lesson.unlocked && lesson.progressStatus !== 'COMPLETED'))
-          ?? nextPath.units.find((unit) => unit.lessons.some((lesson) => lesson.unlocked))
-          ?? nextPath.units[0];
+      
+      if (!hasChosenExpandedUnit.current || highlightUnitCode) {
+        let currentUnit;
+        if (highlightUnitCode) {
+          currentUnit = nextPath.units.find((unit) => unit.code === highlightUnitCode);
+        }
+        
+        if (!currentUnit) {
+          currentUnit = nextPath.units.find((unit) => unit.lessons.some((lesson) => lesson.unlocked && lesson.progressStatus !== 'COMPLETED'))
+            ?? nextPath.units.find((unit) => unit.lessons.some((lesson) => lesson.unlocked))
+            ?? nextPath.units[0];
+        }
+        
         setExpandedUnits(currentUnit ? new Set([currentUnit.id]) : new Set());
         hasChosenExpandedUnit.current = true;
       }
@@ -65,7 +97,7 @@ export default function HomeScreen() {
     } finally {
       setRefreshing(false);
     }
-  }, [selectedLevel]);
+  }, [selectedLevel, highlightUnitCode]);
 
   useFocusEffect(useCallback(() => {
     void loadPath();
@@ -99,7 +131,10 @@ export default function HomeScreen() {
         <Text style={styles.eyebrow}>{selectedLevel.replaceAll('_', ' ')}</Text>
         <Text style={styles.greeting}>Sẵn sàng học nào!</Text>
       </View>
-      <StatusStrip />
+      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+        <NotificationBell />
+        <StatusStrip />
+      </View>
     </View>
     <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
       <View style={styles.goalBand}>
@@ -110,6 +145,17 @@ export default function HomeScreen() {
         </View>
         <Text style={styles.goalValue}>{state.dailyXp}/{state.dailyGoal} XP</Text>
       </View>
+      
+      <Pressable onPress={() => router.push('/(screens)/challenges')} style={{ backgroundColor: '#F0F9FF', padding: 15, borderRadius: 12, flexDirection: 'row', alignItems: 'center', marginBottom: 20, borderWidth: 1, borderColor: '#BAE6FD' }}>
+        <View style={{ backgroundColor: '#0EA5E9', width: 40, height: 40, borderRadius: 20, justifyContent: 'center', alignItems: 'center', marginRight: 15 }}>
+            <MaterialCommunityIcons name="trophy" size={24} color="#FFFFFF" />
+        </View>
+        <View style={{ flex: 1 }}>
+            <Text style={{ fontSize: 16, fontWeight: '700', color: '#0369A1' }}>Thử thách của bạn</Text>
+            <Text style={{ fontSize: 13, color: '#0284C7', marginTop: 2 }}>Tham gia thử thách để nhận thêm phần thưởng!</Text>
+        </View>
+        <MaterialCommunityIcons name="chevron-right" size={24} color="#0284C7" />
+      </Pressable>
 
       <View style={styles.levelTabs}>
         {levels.map((level) => {
@@ -210,49 +256,3 @@ function UnitHeader({ unit, index, expanded, completed, unitCompleted, unitUnloc
     <View style={styles.chevron}><MaterialCommunityIcons name={expanded ? 'chevron-up' : 'chevron-down'} size={27} color="#FFFFFF" /></View>
   </Pressable>;
 }
-
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Theme.colors.background },
-  loading: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  header: { minHeight: 76, paddingHorizontal: 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#FFFFFF', borderBottomWidth: 1, borderBottomColor: Theme.colors.border },
-  eyebrow: { color: Theme.colors.greenDark, fontWeight: '900', fontSize: 11 },
-  greeting: { color: Theme.colors.ink, fontWeight: '900', fontSize: 19, marginTop: 2 },
-  content: { padding: 16, paddingBottom: 48, maxWidth: 720, width: '100%', alignSelf: 'center' },
-  goalBand: { minHeight: 70, flexDirection: 'row', alignItems: 'center', backgroundColor: '#EAF7FE', borderWidth: 1, borderColor: '#CBEAFA', borderRadius: 8, padding: 12, gap: 10, marginBottom: 14 },
-  goalIcon: { width: 42, height: 42, borderRadius: 21, backgroundColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center' },
-  goalCopy: { flex: 1 },
-  goalTitle: { color: Theme.colors.ink, fontWeight: '800', fontSize: 14, marginBottom: 7 },
-  goalValue: { color: Theme.colors.blueDark, fontWeight: '900', fontSize: 13 },
-  progressTrack: { height: 9, borderRadius: 5, backgroundColor: '#C9DFEA', overflow: 'hidden' },
-  progressFill: { height: '100%', borderRadius: 5, backgroundColor: Theme.colors.blue },
-  levelTabs: { flexDirection: 'row', gap: 8, marginBottom: 13 },
-  levelTab: { flex: 1, minWidth: 0, minHeight: 76, alignItems: 'center', justifyContent: 'center', gap: 3, padding: 7, borderWidth: 2, borderBottomWidth: 4, borderColor: Theme.colors.border, borderRadius: 8, backgroundColor: '#FFFFFF' },
-  levelTabActive: { borderColor: Theme.colors.green, backgroundColor: '#F0FBF2' },
-  levelBadge: { width: 29, height: 29, borderRadius: 15, alignItems: 'center', justifyContent: 'center' },
-  levelBadgeOpen: { backgroundColor: Theme.colors.green },
-  levelBadgeLocked: { backgroundColor: '#E8EEF2' },
-  levelTabTitle: { color: Theme.colors.ink, fontSize: 12, fontWeight: '900' },
-  levelTabTitleActive: { color: Theme.colors.greenDark },
-  levelTabProgress: { color: Theme.colors.muted, fontSize: 10, fontWeight: '800' },
-  levelOverview: { paddingVertical: 10, marginBottom: 9 },
-  levelLabel: { color: Theme.colors.greenDark, fontSize: 11, fontWeight: '900' },
-  levelTitle: { color: Theme.colors.ink, fontSize: 21, lineHeight: 27, fontWeight: '900', marginTop: 2 },
-  levelStats: { color: Theme.colors.muted, fontSize: 13, fontWeight: '700', marginTop: 5 },
-  unitSection: { marginBottom: 12 },
-  unitHeader: { minHeight: 104, borderRadius: 8, borderBottomWidth: 4, borderBottomColor: Theme.colors.greenDark, backgroundColor: Theme.colors.green, padding: 12, flexDirection: 'row', alignItems: 'center', gap: 10, overflow: 'hidden' },
-  unitPressed: { opacity: 0.9, transform: [{ translateY: 1 }] },
-  unitImage: { position: 'absolute', right: 0, top: 0, width: '48%', height: '100%' },
-  unitImageShade: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(28,45,52,0.36)' },
-  unitState: { width: 42, height: 42, borderRadius: 21, backgroundColor: Theme.colors.blue, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: 'rgba(255,255,255,0.9)' },
-  unitStateComplete: { backgroundColor: Theme.colors.greenDark },
-  unitStateLocked: { backgroundColor: 'rgba(255,255,255,0.9)' },
-  unitCopy: { flex: 1, minWidth: 0 },
-  unitEyebrow: { color: '#FFFFFF', fontSize: 10, fontWeight: '900' },
-  unitTitle: { color: '#FFFFFF', fontSize: 19, fontWeight: '900', marginTop: 2 },
-  unitSubtitle: { color: '#FFFFFF', fontSize: 12, lineHeight: 17, fontWeight: '700', marginTop: 3, maxWidth: 360 },
-  chevron: { width: 34, height: 42, alignItems: 'center', justifyContent: 'center' },
-  path: { paddingTop: 14, paddingBottom: 4 },
-  errorBand: { minHeight: 62, flexDirection: 'row', alignItems: 'center', gap: 10, padding: 12, borderWidth: 1, borderColor: '#FFD0CD', borderRadius: 8, backgroundColor: '#FFF0EF', marginBottom: 16 },
-  errorText: { flex: 1, color: Theme.colors.coralDark, fontWeight: '700', lineHeight: 19 },
-  retryButton: { width: 42, height: 42, alignItems: 'center', justifyContent: 'center' },
-});

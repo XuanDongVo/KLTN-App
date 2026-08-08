@@ -1,6 +1,6 @@
 import { Theme } from '@/constants/Theme';
 
-export const exploreStyles: any = {
+export const exploreStyles = {
   safe: { flex: 1, backgroundColor: '#F8F9FA' },
   header: {
     paddingHorizontal: 22,

@@ -2,6 +2,7 @@ package com.example.englishapp_server.admin;
 
 import com.example.englishapp_server.common.enums.AccountStatus;
 import com.example.englishapp_server.dto.response.ServerResponse;
+import com.example.englishapp_server.service.ChallengeService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -14,10 +15,12 @@ import static com.example.englishapp_server.admin.AdminOperationsModels.*;
 public class AdminOperationsController {
     private final AdminUserService userService;
     private final AdminMediaService mediaService;
+    private final ChallengeService challengeService;
 
-    public AdminOperationsController(AdminUserService userService, AdminMediaService mediaService) {
+    public AdminOperationsController(AdminUserService userService, AdminMediaService mediaService, com.example.englishapp_server.service.ChallengeService challengeService) {
         this.userService = userService;
         this.mediaService = mediaService;
+        this.challengeService = challengeService;
     }
 
     @GetMapping("/dashboard")
@@ -62,6 +65,17 @@ public class AdminOperationsController {
     @GetMapping("/media")
     public ResponseEntity<?> media() {
         return ok(mediaService.list());
+    }
+
+    @PostMapping("/reports/challenges/trigger")
+    public ResponseEntity<?> triggerChallengeEvaluation() {
+        challengeService.evaluateExpiredChallenges();
+        return ok("Triggered successfully");
+    }
+
+    @GetMapping("/challenges/stats")
+    public ResponseEntity<?> getChallengeStats() {
+        return ok(challengeService.getChallengeStats());
     }
 
     private ResponseEntity<?> ok(Object data) {

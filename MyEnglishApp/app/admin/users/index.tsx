@@ -1,13 +1,16 @@
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Theme } from '@/constants/Theme';
 import { adminOperationsService } from '@/services/adminOperationsService';
 import type { AccountStatus, AdminUserDetail, AdminUserPage, AdminUserSummary } from '@/types/adminOperations';
+import { styles } from '@/styles/admin/users/index.styles';
+import { useModal } from '@/context/ModalContext';
 
 export default function AdminUsersScreen() {
+  const { showAlert, showConfirm } = useModal();
   const [query, setQuery] = useState('');
   const [status, setStatus] = useState<AccountStatus | undefined>();
   const [data, setData] = useState<AdminUserPage>();
@@ -34,24 +37,27 @@ export default function AdminUsersScreen() {
   const openUser = async (user: AdminUserSummary) => {
     setBusy(true);
     try { setSelected(await adminOperationsService.getUser(user.id)); }
-    catch (reason) { Alert.alert('Không tải được người học', messageOf(reason)); }
+    catch (reason) { showAlert('Không tải được người học', messageOf(reason)); }
     finally { setBusy(false); }
   };
 
   const toggleStatus = () => {
     if (!selected) return;
     const next: AccountStatus = selected.user.status === 'ACTIVE' ? 'LOCKED' : 'ACTIVE';
-    Alert.alert(next === 'LOCKED' ? 'Khóa tài khoản?' : 'Mở khóa tài khoản?', next === 'LOCKED' ? 'Người học sẽ không thể đăng nhập hoặc tiếp tục dùng JWT hiện tại.' : 'Người học có thể đăng nhập lại bình thường.', [
-      { text: 'Hủy', style: 'cancel' },
-      { text: next === 'LOCKED' ? 'Khóa' : 'Mở khóa', style: next === 'LOCKED' ? 'destructive' : 'default', onPress: () => void (async () => {
-        setBusy(true);
-        try {
-          setSelected(await adminOperationsService.updateUserStatus(selected.user.id, next));
-          await load(data?.page ?? 0);
-        } catch (reason) { Alert.alert('Không cập nhật được', messageOf(reason)); }
-        finally { setBusy(false); }
-      })() },
-    ]);
+    showConfirm(
+        next === 'LOCKED' ? 'Khóa tài khoản?' : 'Mở khóa tài khoản?',
+        next === 'LOCKED' ? 'Người học sẽ không thể đăng nhập hoặc tiếp tục dùng JWT hiện tại.' : 'Người học có thể đăng nhập lại bình thường.',
+        next === 'LOCKED' ? 'Khóa' : 'Mở khóa',
+        'Hủy',
+        async () => {
+            setBusy(true);
+            try {
+                setSelected(await adminOperationsService.updateUserStatus(selected.user.id, next));
+                await load(data?.page ?? 0);
+            } catch (reason) { showAlert('Không cập nhật được', messageOf(reason)); }
+            finally { setBusy(false); }
+        }
+    );
   };
 
   return <View style={styles.screen}><ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
@@ -81,18 +87,3 @@ function StatusBadge({ status }: { status: AccountStatus }) { return <View style
 function MiniStat({ label, value }: { label: string; value: number }) { return <View style={styles.miniStat}><Text style={styles.miniValue}>{value}</Text><Text style={styles.miniLabel}>{label}</Text></View>; }
 function formatDate(value?: string) { return value ? new Date(value).toLocaleDateString('vi-VN') : 'Chưa có'; }
 function messageOf(reason: unknown) { return reason instanceof Error ? reason.message : 'Đã xảy ra lỗi không xác định.'; }
-
-const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: Theme.colors.background }, content: { width: '100%', maxWidth: 1050, alignSelf: 'center', padding: 18, paddingBottom: 50 },
-  heading: { flexDirection: 'row', justifyContent: 'space-between' }, eyebrow: { color: Theme.colors.greenDark, fontSize: 11, fontWeight: '900' }, title: { color: Theme.colors.ink, fontSize: 28, fontWeight: '900', marginTop: 3 }, subtitle: { color: Theme.colors.muted, marginTop: 4 },
-  toolbar: { marginTop: 20, gap: 10 }, search: { minHeight: 50, flexDirection: 'row', alignItems: 'center', gap: 8, borderWidth: 1, borderColor: Theme.colors.border, borderRadius: 8, backgroundColor: '#FFFFFF', paddingLeft: 12 }, searchInput: { flex: 1, color: Theme.colors.ink, fontSize: 15 }, searchButton: { width: 48, height: 48, borderRadius: 7, backgroundColor: Theme.colors.blueDark, alignItems: 'center', justifyContent: 'center' },
-  filters: { flexDirection: 'row', flexWrap: 'wrap', gap: 7 }, filter: { minHeight: 38, borderWidth: 1, borderColor: Theme.colors.border, borderRadius: 7, justifyContent: 'center', paddingHorizontal: 11, backgroundColor: '#FFFFFF' }, filterActive: { borderColor: Theme.colors.green, backgroundColor: '#EAF9ED' }, filterText: { color: Theme.colors.muted, fontSize: 11, fontWeight: '800' }, filterTextActive: { color: Theme.colors.greenDark, fontWeight: '900' },
-  error: { marginTop: 12, flexDirection: 'row', gap: 8, alignItems: 'center', borderWidth: 1, borderColor: '#FFD0CD', borderRadius: 8, backgroundColor: '#FFF0EF', padding: 11 }, errorText: { flex: 1, color: Theme.colors.coralDark, fontWeight: '700' }, loading: { minHeight: 300, alignItems: 'center', justifyContent: 'center' },
-  list: { marginTop: 14, borderWidth: 1, borderColor: Theme.colors.border, borderRadius: 8, backgroundColor: '#FFFFFF', overflow: 'hidden' }, userRow: { minHeight: 82, flexDirection: 'row', alignItems: 'center', gap: 11, borderBottomWidth: 1, borderBottomColor: Theme.colors.border, padding: 12 }, avatar: { width: 46, height: 46, borderRadius: 8, backgroundColor: '#EAF7FE', alignItems: 'center', justifyContent: 'center' }, avatarText: { color: Theme.colors.blueDark, fontSize: 18, fontWeight: '900' }, userCopy: { flex: 1, minWidth: 0 }, userName: { color: Theme.colors.ink, fontSize: 15, fontWeight: '900' }, userEmail: { color: Theme.colors.muted, fontSize: 11, marginTop: 2 }, userMeta: { color: Theme.colors.muted, fontSize: 10, marginTop: 4 },
-  statusBadge: { borderRadius: 5, paddingHorizontal: 7, paddingVertical: 5 }, activeBadge: { backgroundColor: '#E7F8EA' }, lockedBadge: { backgroundColor: '#FFF0EF' }, statusText: { fontSize: 8, fontWeight: '900' },
-  pagination: { minHeight: 64, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 14 }, pageButton: { width: 44, height: 44, borderWidth: 1, borderColor: Theme.colors.border, borderRadius: 7, backgroundColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center' }, pageText: { color: Theme.colors.ink, fontWeight: '800', fontSize: 12 }, disabled: { opacity: 0.4 }, busyOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(26,40,48,0.45)', alignItems: 'center', justifyContent: 'center' },
-  modalSafe: { flex: 1, backgroundColor: 'rgba(25,39,47,0.55)' }, modalBackdrop: { flex: 1, justifyContent: 'flex-end', alignItems: 'center' }, modalPanel: { width: '100%', maxWidth: 720, maxHeight: '94%', borderTopLeftRadius: 8, borderTopRightRadius: 8, backgroundColor: '#FFFFFF', overflow: 'hidden' }, modalHeader: { minHeight: 72, flexDirection: 'row', alignItems: 'center', gap: 10, borderBottomWidth: 1, borderBottomColor: Theme.colors.border, paddingHorizontal: 15 }, modalAvatar: { width: 44, height: 44, borderRadius: 8, alignItems: 'center', justifyContent: 'center', backgroundColor: '#EAF7FE' }, modalTitleCopy: { flex: 1 }, modalTitle: { color: Theme.colors.ink, fontSize: 18, fontWeight: '900' }, iconButton: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' }, modalContent: { padding: 15, paddingBottom: 30, gap: 10 },
-  detailStats: { flexDirection: 'row', gap: 8 }, miniStat: { flex: 1, minHeight: 78, borderRadius: 8, backgroundColor: '#F4F8FA', alignItems: 'center', justifyContent: 'center' }, miniValue: { color: Theme.colors.ink, fontSize: 20, fontWeight: '900' }, miniLabel: { color: Theme.colors.muted, fontSize: 9, fontWeight: '800', marginTop: 2 }, detailLine: { minHeight: 48, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10, borderBottomWidth: 1, borderBottomColor: Theme.colors.border }, detailLabel: { color: Theme.colors.muted, fontSize: 11, fontWeight: '800' }, detailValue: { color: Theme.colors.ink, fontSize: 11, fontWeight: '800' }, sectionTitle: { color: Theme.colors.ink, fontSize: 15, fontWeight: '900', marginTop: 9 },
-  progressRow: { borderWidth: 1, borderColor: Theme.colors.border, borderRadius: 8, padding: 10 }, progressCopy: { paddingRight: 50 }, progressTitle: { color: Theme.colors.ink, fontWeight: '900', fontSize: 12 }, percent: { position: 'absolute', right: 10, top: 11, color: Theme.colors.greenDark, fontWeight: '900', fontSize: 11 }, track: { height: 7, borderRadius: 4, backgroundColor: '#E8EEF1', overflow: 'hidden', marginTop: 9 }, fill: { height: '100%', backgroundColor: Theme.colors.green },
-  sessionRow: { minHeight: 58, flexDirection: 'row', alignItems: 'center', gap: 9, borderTopWidth: 1, borderTopColor: Theme.colors.border }, sessionIcon: { width: 34, height: 34, borderRadius: 7, backgroundColor: '#F1F6F8', alignItems: 'center', justifyContent: 'center' }, sessionTitle: { color: Theme.colors.ink, fontSize: 12, fontWeight: '800' }, emptyText: { color: Theme.colors.muted, paddingVertical: 16, textAlign: 'center' }, statusAction: { minHeight: 50, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, borderWidth: 1, borderRadius: 7, marginTop: 8 }, lockAction: { borderColor: '#F4B4AF', backgroundColor: '#FFF3F2' }, unlockAction: { borderColor: '#BDE5C3', backgroundColor: '#F0FBF2' }, statusActionText: { fontWeight: '900' },
-});

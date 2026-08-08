@@ -72,6 +72,8 @@ export type LearnerState = {
   completedLessonIds: string[];
   results: Record<string, LessonResult>;
   mistakeActivityIds: string[];
+  username?: string;
+  avatarUrl?: string;
 };
 
 export type CaptionResult = {

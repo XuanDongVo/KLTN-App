@@ -10,6 +10,7 @@ import { ActionButton } from '@/components/ui/ActionButton';
 import { Theme } from '@/constants/Theme';
 import { resolveCurriculumMediaUrl } from '@/services/curriculumService';
 import type { BackendActivity } from '@/types/backendCurriculum';
+import { styles } from './BackendActivityRenderer.styles';
 
 type Props = {
   activity: BackendActivity;
@@ -261,60 +262,3 @@ function stableShuffle(values: string[], seed: number): string[] {
   }
   return result;
 }
-
-const styles = StyleSheet.create({
-  stack: { gap: 14 },
-  heroImage: { width: '100%', maxHeight: 360, borderRadius: 8, backgroundColor: '#E8EEF2' },
-  introImage: { width: '100%', maxHeight: 230, borderRadius: 8, backgroundColor: '#E8EEF2' },
-  cardTitle: { color: Theme.colors.ink, fontSize: 30, fontWeight: '900', textAlign: 'center' },
-  meaning: { color: Theme.colors.violet, fontSize: 18, fontWeight: '800', textAlign: 'center' },
-  vocabularyProgress: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 },
-  vocabularyProgressText: { color: Theme.colors.blueDark, fontSize: 11, fontWeight: '900' },
-  progressDots: { flex: 1, flexDirection: 'row', justifyContent: 'flex-end', gap: 5 },
-  progressDot: { width: 9, height: 9, borderRadius: 5, backgroundColor: '#DDE6EB' },
-  progressDotActive: { backgroundColor: Theme.colors.green },
-  vocabularyCard: { minHeight: 220, alignItems: 'center', justifyContent: 'center', padding: 22, borderWidth: 2, borderBottomWidth: 5, borderColor: '#B9E3F8', borderRadius: 8, backgroundColor: '#FFFFFF' },
-  pressedCard: { transform: [{ translateY: 2 }], borderBottomWidth: 3 },
-  wordSpeaker: { width: 50, height: 50, borderRadius: 25, alignItems: 'center', justifyContent: 'center', backgroundColor: Theme.colors.blue },
-  vocabularyWord: { color: Theme.colors.ink, fontSize: 34, fontWeight: '900', marginTop: 12, textAlign: 'center' },
-  meaningDivider: { width: 52, height: 3, borderRadius: 2, backgroundColor: Theme.colors.yellow, marginVertical: 12 },
-  vocabularyMeaning: { color: Theme.colors.violet, fontSize: 21, fontWeight: '900', textAlign: 'center' },
-  vocabularyExample: { color: Theme.colors.muted, lineHeight: 20, marginTop: 8, textAlign: 'center' },
-  tapHint: { color: Theme.colors.muted, fontSize: 12, marginTop: 15 },
-  navigationRow: { flexDirection: 'row', alignItems: 'stretch', gap: 10 },
-  previousButton: { width: 54, minHeight: 52, borderWidth: 2, borderBottomWidth: 4, borderColor: Theme.colors.border, borderRadius: 8, alignItems: 'center', justifyContent: 'center', backgroundColor: '#FFFFFF' },
-  navigationDisabled: { opacity: 0.35 },
-  nextButton: { flex: 1 },
-  wordRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, justifyContent: 'center' },
-  listenButton: { minHeight: 48, alignSelf: 'center', flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 16, borderRadius: 8, backgroundColor: '#EAF7FE', borderWidth: 1, borderColor: '#B9E3F8' },
-  listenText: { color: Theme.colors.blueDark, fontWeight: '900' },
-  input: { minHeight: 56, borderWidth: 2, borderColor: Theme.colors.border, borderRadius: 8, backgroundColor: '#FFFFFF', paddingHorizontal: 15, color: Theme.colors.ink, fontSize: 18, fontWeight: '700' },
-  sentenceArea: { minHeight: 94, padding: 10, flexDirection: 'row', flexWrap: 'wrap', gap: 8, borderBottomWidth: 2, borderBottomColor: Theme.colors.border },
-  helper: { color: Theme.colors.muted, textAlign: 'center', lineHeight: 20 },
-  selectedWord: { paddingHorizontal: 12, paddingVertical: 9, borderRadius: 7, backgroundColor: '#EAF7FE' },
-  wordButton: { paddingHorizontal: 12, paddingVertical: 9, borderWidth: 1, borderBottomWidth: 3, borderColor: '#C7D1D7', borderRadius: 7, backgroundColor: '#FFFFFF' },
-  wordText: { color: Theme.colors.ink, fontWeight: '800' },
-  used: { opacity: 0.25 },
-  matchGuide: { minHeight: 54, flexDirection: 'row', alignItems: 'center', gap: 9, padding: 11, borderRadius: 8, backgroundColor: '#EAF7FE' },
-  matchGuideText: { flex: 1, color: Theme.colors.blueDark, fontWeight: '800', lineHeight: 19 },
-  matchToolbar: { minHeight: 34, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
-  pairCount: { color: Theme.colors.ink, fontWeight: '900' },
-  resetButton: { minHeight: 34, flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 8 },
-  resetText: { color: Theme.colors.coralDark, fontSize: 12, fontWeight: '900' },
-  columnLabels: { flexDirection: 'row', gap: 10 },
-  columnLabel: { flex: 1, color: Theme.colors.muted, fontSize: 11, fontWeight: '900', textAlign: 'center' },
-  columns: { flexDirection: 'row', alignItems: 'stretch', gap: 10 },
-  column: { flex: 1, gap: 9 },
-  matchChoice: { minHeight: 64, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingHorizontal: 8, paddingVertical: 10, borderWidth: 2, borderBottomWidth: 4, borderColor: Theme.colors.border, borderRadius: 8, backgroundColor: '#FFFFFF' },
-  matchSelected: { borderColor: Theme.colors.blue, backgroundColor: '#EAF7FE' },
-  matchChoiceIdle: { opacity: 0.72 },
-  matchChoiceText: { flexShrink: 1, color: Theme.colors.ink, fontSize: 15, fontWeight: '800', textAlign: 'center' },
-  pairBadge: { width: 23, height: 23, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
-  pairBadgeText: { color: '#FFFFFF', fontSize: 12, fontWeight: '900' },
-  selectionHint: { color: Theme.colors.blueDark, fontWeight: '800', textAlign: 'center', lineHeight: 19 },
-  undoHint: { color: Theme.colors.muted, fontSize: 12, textAlign: 'center' },
-  choice: { minHeight: 56, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8, padding: 10, borderWidth: 2, borderBottomWidth: 4, borderColor: Theme.colors.border, borderRadius: 8, backgroundColor: '#FFFFFF' },
-  choiceSelected: { borderColor: Theme.colors.green, backgroundColor: '#F0FBF2' },
-  choiceText: { flex: 1, color: Theme.colors.ink, fontSize: 16, fontWeight: '800', textAlign: 'center' },
-  bigListen: { width: 88, height: 88, borderRadius: 44, alignSelf: 'center', alignItems: 'center', justifyContent: 'center', backgroundColor: Theme.colors.blue, borderBottomWidth: 6, borderBottomColor: Theme.colors.blueDark },
-});
