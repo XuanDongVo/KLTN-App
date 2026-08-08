@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Báo cáo Tiến độ Thử thách</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f7f6;
+            margin: 0;
+            padding: 0;
+            color: #333333;
+        }
+        .container {
+            max-width: 600px;
+            margin: 40px auto;
+            background-color: #ffffff;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+        }
+        .header {
+            background-color: #00875A;
+            padding: 30px;
+            text-align: center;
+            color: #ffffff;
+        }
+        .header.failed {
+            background-color: #FF9800;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 24px;
+            font-weight: 700;
+        }
+        .content {
+            padding: 30px;
+        }
+        .content p {
+            font-size: 16px;
+            line-height: 1.6;
+            margin-bottom: 20px;
+            color: #444444;
+        }
+        
+        /* Bar Chart Styles */
+        .chart-container {
+            margin-bottom: 30px;
+            background-color: #ffffff;
+            border: 1px solid #eef2f5;
+            border-radius: 8px;
+            padding: 20px;
+        }
+        .chart-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #555;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .bar-wrap {
+            margin-bottom: 15px;
+        }
+        .bar-label-table {
+            width: 100%;
+            margin-bottom: 5px;
+        }
+        .bar-label-table td {
+            font-size: 14px;
+            font-weight: 500;
+            color: #333;
+        }
+        .bar-bg {
+            background-color: #e9ecef;
+            border-radius: 10px;
+            height: 12px;
+            width: 100%;
+            overflow: hidden;
+        }
+        .bar-fill {
+            background-color: #00875A;
+            height: 100%;
+            border-radius: 10px;
+        }
+        .bar-fill.failed {
+            background-color: #f44336;
+        }
+
+        .footer {
+            background-color: #f9fafb;
+            padding: 20px;
+            text-align: center;
+            font-size: 13px;
+            color: #888888;
+            border-top: 1px solid #eeeeee;
+        }
+        .footer p {
+            margin: 5px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header" th:classappend="${isSuccess} ? '' : 'failed'">
+            <h1 th:text="${isSuccess} ? 'Thử thách hoàn thành!' : 'Đừng nản chí!'">Báo Cáo</h1>
+        </div>
+        <div class="content">
+            <p>Xin chào <strong><span th:text="${username}">Học viên</span></strong>,</p>
+            <p th:if="${isSuccess}">Chúc mừng bạn đã xuất sắc hoàn thành thử thách <strong><span th:text="${targetDays}"></span> ngày</strong> trên <strong>EnglishApp</strong>! Sự nỗ lực của bạn thật tuyệt vời.</p>
+            <p th:unless="${isSuccess}">Thử thách <strong><span th:text="${targetDays}"></span> ngày</strong> của bạn đã khép lại. Dù chưa đạt được mục tiêu tối đa, nhưng những kinh nghiệm bạn kiếm được vẫn rất đáng tự hào!</p>
+            
+            <div class="chart-container">
+                <div class="chart-title">Kết quả Thử thách:</div>
+                
+                <div class="bar-wrap" style="margin-bottom: 0;">
+                    <table class="bar-label-table" cellpadding="0" cellspacing="0" border="0">
+                        <tr>
+                            <td align="left">Kinh nghiệm (XP):</td>
+                            <td align="right" th:text="${currentXp} + ' / ' + ${targetXp} + ' XP'"></td>
+                        </tr>
+                        <tr>
+                            <td align="left">Số lượng bài học đã học:</td>
+                            <td align="right" th:text="${completedUnits} + ' bài'"></td>
+                        </tr>
+                        <tr>
+                            <td align="left">Số ngày đã học:</td>
+                            <td align="right" th:text="${learnedDays} + ' ngày'"></td>
+                        </tr>
+                    </table>
+                    <div class="bar-bg">
+                        <div class="bar-fill" th:classappend="${!isSuccess} ? 'failed'" th:style="'width: ' + (${currentXp} >= ${targetXp} ? 100 : (${currentXp} * 100 / ${targetXp})) + '%;'"></div>
+                    </div>
+                </div>
+            </div>
+
+            <p th:if="${isSuccess}">Tuyệt vời! Hãy tiếp tục đặt ra những thử thách mới và chinh phục chúng nhé.</p>
+            <p th:unless="${isSuccess}">Không sao cả! Hãy tạo một thử thách mới và phục thù vào ngày mai nhé.</p>
+            <p>Hẹn gặp lại bạn trên ứng dụng!</p>
+        </div>
+        <div class="footer">
+            <p>&copy; 2026 EnglishApp. All rights reserved.</p>
+            <p>Nếu bạn không muốn nhận email này, vui lòng bỏ qua nó.</p>
+        </div>
+    </div>
+</body>
+</html>
