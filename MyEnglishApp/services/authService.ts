@@ -44,5 +44,3 @@ export const resetPasswordApi = (email: string, code: string, newPassword: strin
 export const logoutApi = (refreshToken: string) => post<void>('/api/auth/logout', { refreshToken });
 export const logoutAllApi = (email: string) => post<void>('/api/auth/logout-all', { email });
 
-import { request } from './apiClient';
-export const sendPushTokenApi = (expoPushToken: string) => request<void>('/api/learner/profile/push-token', { method: 'POST', body: JSON.stringify({ expoPushToken }) });

@@ -28,7 +28,8 @@ export const unstable_settings = {
 SplashScreen.preventAutoHideAsync();
 
 import { usePushNotifications } from '@/hooks/usePushNotifications';
-import { sendPushTokenApi, refreshTokenApi } from '@/services/authService';
+import { refreshTokenApi } from '@/services/authService';
+import { sendPushTokenApi } from '@/services/notificationService';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
 
