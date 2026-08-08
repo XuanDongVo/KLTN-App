@@ -1,0 +1,8 @@
+SET FOREIGN_KEY_CHECKS = 0;
+DROP TABLE IF EXISTS unit_progresses;
+DROP TABLE IF EXISTS unit_vocabularies;
+DROP TABLE IF EXISTS unit_images;
+DROP TABLE IF EXISTS question_banks;
+DROP TABLE IF EXISTS saved_vocabularies;
+DROP TABLE IF EXISTS units;
+SET FOREIGN_KEY_CHECKS = 1;
