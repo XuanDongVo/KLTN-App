@@ -59,6 +59,11 @@ public class ChallengeService {
         }
         
         UserChallenge challenge = activeChallengeOpt.get();
+        if (challenge.getEndDate().isBefore(LocalDateTime.now())) {
+            this.evaluateExpiredChallenges();
+            return null;
+        }
+        
         int currentXp = calculateProgressStats(challenge.getUserId().toString(), challenge.getStartDate()).currentXp;
         
         return toResponse(challenge, currentXp);

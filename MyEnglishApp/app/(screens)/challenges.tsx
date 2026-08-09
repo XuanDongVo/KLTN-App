@@ -20,7 +20,7 @@ export default function ChallengesScreen() {
     const [selectedDays, setSelectedDays] = useState(7);
 
     const xpOptions = [500, 1000, 2000];
-    const daysOptions = [7, 14, 30];
+    const daysOptions = [1, 7, 14, 30];
 
     const fetchCurrentChallenge = async () => {
         setLoading(true);
