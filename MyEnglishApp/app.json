@@ -38,7 +38,7 @@
         {
           "photosPermission": "Cho phép Fun English chọn ảnh cho nhiệm vụ học tập.",
           "cameraPermission": "Cho phép Fun English chụp ảnh cho nhiệm vụ học tập.",
-          "microphonePermission": false
+          "microphonePermission": "Cho phép Fun English dùng micro khi quay video."
         }
       ],
       "expo-web-browser",
