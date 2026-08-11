@@ -106,7 +106,7 @@ export function BackendActivityRenderer({ activity, disabled, onSubmit }: Props)
     return <SpeakingActivity
       phrase={asString(content.modelText) || activity.prompt}
       instruction={activity.instruction}
-      onComplete={() => onSubmit({ completed: true })}
+      onComplete={(recordingUri) => onSubmit({ recordingUri })}
     />;
   }
 

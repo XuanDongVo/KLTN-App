@@ -9,7 +9,7 @@ import {
   useAudioRecorderState,
 } from 'expo-audio';
 import * as Speech from 'expo-speech';
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { ActionButton } from '@/components/ui/ActionButton';
@@ -23,12 +23,25 @@ type Props = {
 };
 
 export function SpeakingActivity({ phrase, instruction, onComplete }: Props) {
-  const recorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
+  const recorder = useAudioRecorder({ ...RecordingPresets.HIGH_QUALITY, isMeteringEnabled: true });
   const recorderState = useAudioRecorderState(recorder, 150);
   const player = useAudioPlayer(null);
   const playerState = useAudioPlayerStatus(player);
   const [recordingUri, setRecordingUri] = useState<string>();
   const [busy, setBusy] = useState(false);
+  const [wasAutoStopped, setWasAutoStopped] = useState(false);
+  const recordingTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const heardVoice = useRef(false);
+
+  useEffect(() => {
+    if (typeof recorderState.metering === 'number' && recorderState.metering > -60) {
+      heardVoice.current = true;
+    }
+  }, [recorderState.metering]);
+
+  useEffect(() => () => {
+    if (recordingTimer.current) clearTimeout(recordingTimer.current);
+  }, []);
 
   const startRecording = async () => {
     setBusy(true);
@@ -44,6 +57,11 @@ export function SpeakingActivity({ phrase, instruction, onComplete }: Props) {
       await recorder.prepareToRecordAsync();
       recorder.record();
       setRecordingUri(undefined);
+      setWasAutoStopped(false);
+      heardVoice.current = false;
+      recordingTimer.current = setTimeout(() => {
+        void stopRecording(true);
+      }, 12_000);
     } catch {
       Alert.alert('Chưa thể bật micro', 'Con hãy kiểm tra quyền micro rồi thử lại nhé.');
     } finally {
@@ -51,14 +69,20 @@ export function SpeakingActivity({ phrase, instruction, onComplete }: Props) {
     }
   };
 
-  const stopRecording = async () => {
+  const stopRecording = async (autoStopped = false) => {
     setBusy(true);
     try {
+      if (recordingTimer.current) clearTimeout(recordingTimer.current);
       await recorder.stop();
       await setAudioModeAsync({ allowsRecording: false, playsInSilentMode: true });
-      if (recorder.uri) {
+      const wasSilent = !heardVoice.current || recorderState.durationMillis < 800;
+      if (wasSilent) {
+        setRecordingUri(undefined);
+        Alert.alert('Chưa nghe rõ giọng nói', 'Con hãy đọc rõ câu mẫu rồi thử lại nhé. Bài này chưa được gửi đi.');
+      } else if (recorder.uri) {
         setRecordingUri(recorder.uri);
         player.replace({ uri: recorder.uri });
+        setWasAutoStopped(autoStopped);
       }
     } catch {
       Alert.alert('Chưa lưu được giọng nói', 'Con thử ghi âm lại một lần nữa nhé.');
@@ -93,7 +117,7 @@ export function SpeakingActivity({ phrase, instruction, onComplete }: Props) {
       <MaterialCommunityIcons name={recorderState.isRecording ? 'waveform' : 'microphone'} size={46} color={recorderState.isRecording ? '#FFFFFF' : Theme.colors.coral} />
     </View>
     <Text style={styles.phrase}>{phrase}</Text>
-    <Text style={styles.helper}>{recorderState.isRecording ? `Đang ghi âm ${seconds} giây` : recordingUri ? 'Tuyệt lắm! Con có thể nghe lại trước khi nộp.' : instruction ?? 'Chạm nút micro và đọc thật rõ.'}</Text>
+    <Text style={styles.helper}>{recorderState.isRecording ? `Đang ghi âm ${seconds}/12 giây` : recordingUri ? (wasAutoStopped ? 'Đã tự dừng sau 12 giây. Con có thể nghe lại trước khi nộp.' : 'Tuyệt lắm! Con có thể nghe lại trước khi nộp.') : instruction ?? 'Chạm nút micro và đọc thật rõ.'}</Text>
 
     {recorderState.isRecording
       ? <ActionButton label="Dừng ghi âm" icon="stop" color={Theme.colors.coral} onPress={stopRecording} disabled={busy || recorderState.durationMillis < 700} />

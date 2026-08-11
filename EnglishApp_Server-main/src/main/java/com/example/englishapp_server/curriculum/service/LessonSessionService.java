@@ -12,6 +12,7 @@ import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
 import java.util.*;
@@ -30,6 +31,7 @@ public class LessonSessionService {
     private final LearnerCurriculumService curriculumService;
     private final LearnerHistoryRepository historyRepository;
     private final LearnerProfileService profileService;
+    private final SpeechTranscriptionService speechTranscriptionService;
 
     public LessonSessionService(LessonRepository lessonRepository,
                                 LearningActivityRepository activityRepository,
@@ -40,7 +42,8 @@ public class LessonSessionService {
                                 ObjectMapper objectMapper,
                                 LearnerCurriculumService curriculumService,
                                 LearnerHistoryRepository historyRepository,
-                                LearnerProfileService profileService) {
+                                LearnerProfileService profileService,
+                                SpeechTranscriptionService speechTranscriptionService) {
         this.lessonRepository = lessonRepository;
         this.activityRepository = activityRepository;
         this.sessionRepository = sessionRepository;
@@ -51,6 +54,7 @@ public class LessonSessionService {
         this.curriculumService = curriculumService;
         this.historyRepository = historyRepository;
         this.profileService = profileService;
+        this.speechTranscriptionService = speechTranscriptionService;
     }
 
     @Transactional
@@ -153,6 +157,31 @@ public class LessonSessionService {
 
     @Transactional
     public AttemptResult submitAttempt(UUID userId, UUID sessionId, AttemptRequest request) {
+        return submitAttempt(userId, sessionId, request, null, null, null);
+    }
+
+    @Transactional
+    public AttemptResult submitSpeakingAttempt(UUID userId, UUID sessionId, Long activityId, MultipartFile audio) {
+        LessonSession session = ownedSession(userId, sessionId);
+        requireInProgress(session);
+        List<LearningActivity> activities = activities(session);
+        if (session.getCurrentActivityIndex() >= activities.size()) {
+            throw new IllegalStateException("All activities have already been attempted");
+        }
+        LearningActivity activity = activities.get(session.getCurrentActivityIndex());
+        if (!activity.getId().equals(activityId) || activity.getActivityType() != LearningActivityType.SPEAK) {
+            throw new IllegalArgumentException("Speaking audio must target the current speaking activity");
+        }
+
+        String expectedPhrase = speechPhrase(activity);
+        String transcript = speechTranscriptionService.transcribe(audio, expectedPhrase);
+        SpeechAssessment assessment = SpeechTextEvaluator.assess(expectedPhrase, transcript);
+        return submitAttempt(userId, sessionId, new AttemptRequest(activityId, Map.of("transcript", transcript)),
+                assessment.correct(), transcript, assessment.matchScore());
+    }
+
+    private AttemptResult submitAttempt(UUID userId, UUID sessionId, AttemptRequest request,
+                                        Boolean forcedCorrect, String transcript, Integer matchScore) {
         LessonSession session = ownedSession(userId, sessionId);
         requireInProgress(session);
         List<LearningActivity> activities = activities(session);
@@ -164,17 +193,24 @@ public class LessonSessionService {
         if (!activity.getId().equals(request.activityId())) {
             throw new IllegalArgumentException("Attempt must target the current activity");
         }
-        if (activity.getId() > 0 && attemptRepository.existsBySessionIdAndActivityId(sessionId, activity.getId())) {
+        boolean speakingActivity = activity.getActivityType() == LearningActivityType.SPEAK;
+        if (!speakingActivity && activity.getId() > 0 && attemptRepository.existsBySessionIdAndActivityId(sessionId, activity.getId())) {
             throw new IllegalStateException("Activity has already been attempted in this session");
         }
 
+        if (speakingActivity && forcedCorrect == null) {
+            throw new IllegalArgumentException("Speaking activities must be submitted with audio");
+        }
         Map<String, Object> submitted = request.answer() == null ? Map.of() : request.answer();
-        boolean correct = evaluate(activity, submitted);
+        boolean correct = forcedCorrect != null ? forcedCorrect : evaluate(activity, submitted);
+        boolean retryableSpeakingMistake = speakingActivity && !correct;
         int earned = correct ? activity.getXpReward() : 0;
         session.setTotalAttempts(session.getTotalAttempts() + 1);
         session.setCorrectAttempts(session.getCorrectAttempts() + (correct ? 1 : 0));
         session.setXpEarned(session.getXpEarned() + earned);
-        session.setCurrentActivityIndex(session.getCurrentActivityIndex() + 1);
+        if (!retryableSpeakingMistake) {
+            session.setCurrentActivityIndex(session.getCurrentActivityIndex() + 1);
+        }
         if (!correct && activity.getActivityStage() == ActivityStage.CHECK) {
             session.setHeartsRemaining(Math.max(0, session.getHeartsRemaining() - 1));
             profileService.deductHeart(userId);
@@ -196,7 +232,13 @@ public class LessonSessionService {
         boolean canFinish = session.getCurrentActivityIndex() >= activities.size() || session.getHeartsRemaining() == 0;
         return new AttemptResult(correct,
                 correct ? "Chính xác!" : "Chưa đúng, mình sẽ ôn lại mục này sau nhé.",
-                session.getHeartsRemaining(), session.getCurrentActivityIndex(), session.getXpEarned(), canFinish);
+                session.getHeartsRemaining(), session.getCurrentActivityIndex(), session.getXpEarned(), canFinish,
+                transcript, matchScore);
+    }
+
+    private String speechPhrase(LearningActivity activity) {
+        Object modelText = readJson(activity.getContentJson()).get("modelText");
+        return modelText instanceof String text && !text.isBlank() ? text : activity.getPromptText();
     }
 
     @Transactional

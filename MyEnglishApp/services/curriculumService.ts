@@ -34,5 +34,19 @@ export const curriculumService = {
       method: 'POST',
       body: JSON.stringify({ activityId, answer }),
     }),
+  submitSpeakingAttempt: (sessionId: string, activityId: number, recordingUri: string) => {
+    const form = new FormData();
+    const extension = recordingUri.split('?')[0].split('.').pop()?.toLowerCase() || 'm4a';
+    form.append('activityId', String(activityId));
+    form.append('audio', {
+      uri: recordingUri,
+      name: `speaking.${extension}`,
+      type: extension === 'webm' ? 'audio/webm' : 'audio/m4a',
+    } as unknown as Blob);
+    return request<BackendAttemptResult>(`/api/sessions/${sessionId}/speaking-attempts`, {
+      method: 'POST',
+      body: form,
+    });
+  },
   finishLesson: (sessionId: string) => request<BackendFinishResult>(`/api/sessions/${sessionId}/finish`, { method: 'POST' }),
 };

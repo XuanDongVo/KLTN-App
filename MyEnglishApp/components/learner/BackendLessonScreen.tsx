@@ -22,6 +22,7 @@ export function BackendLessonScreen({ lessonId, level }: Props) {
   const [feedback, setFeedback] = useState<BackendAttemptResult>();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const [speakingRetryKey, setSpeakingRetryKey] = useState(0);
 
   useEffect(() => {
     curriculumService.getPath(level)
@@ -53,7 +54,10 @@ export function BackendLessonScreen({ lessonId, level }: Props) {
     setBusy(true);
     setError('');
     try {
-      setFeedback(await curriculumService.submitAttempt(session.id, activity.id, answer));
+      const recordingUri = activity.type === 'SPEAK' && isRecordingAnswer(answer) ? answer.recordingUri : undefined;
+      setFeedback(recordingUri
+        ? await curriculumService.submitSpeakingAttempt(session.id, activity.id, recordingUri)
+        : await curriculumService.submitAttempt(session.id, activity.id, answer));
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : 'Không thể nộp câu trả lời.');
     } finally {
@@ -63,6 +67,7 @@ export function BackendLessonScreen({ lessonId, level }: Props) {
 
   const continueLesson = async () => {
     if (!session || !feedback) return;
+    const retryableSpeakingMistake = activity?.type === 'SPEAK' && !feedback.correct && !feedback.canFinish;
     if (!feedback.canFinish) {
       setSession({
         ...session,
@@ -73,6 +78,9 @@ export function BackendLessonScreen({ lessonId, level }: Props) {
         xpEarned: feedback.xpEarned,
       });
       setFeedback(undefined);
+      if (retryableSpeakingMistake) {
+        setSpeakingRetryKey((value) => value + 1);
+      }
       return;
     }
 
@@ -150,6 +158,7 @@ export function BackendLessonScreen({ lessonId, level }: Props) {
   }
 
   const visibleIndex = session.currentActivityIndex;
+  const retryableSpeakingMistake = activity?.type === 'SPEAK' && feedback && !feedback.correct && !feedback.canFinish;
   return <SafeAreaView style={styles.safe}>
     <View style={styles.playerHeader}>
       <Pressable accessibilityLabel="Đóng bài học" onPress={() => router.back()} style={styles.close}><MaterialCommunityIcons name="close" size={26} color={Theme.colors.muted} /></Pressable>
@@ -160,7 +169,7 @@ export function BackendLessonScreen({ lessonId, level }: Props) {
       <Text style={styles.counter}>HOẠT ĐỘNG {visibleIndex + 1}/{session.activities.length}</Text>
       <Text style={styles.prompt}>{activity?.prompt}</Text>
       {activity?.instruction && activity.type !== 'SPEAK' ? <Text style={styles.instruction}>{activity.instruction}</Text> : null}
-      {activity ? <BackendActivityRenderer key={activity.id} activity={activity} disabled={busy || Boolean(feedback)} onSubmit={submit} /> : null}
+      {activity ? <BackendActivityRenderer key={`${activity.id}-${speakingRetryKey}`} activity={activity} disabled={busy || Boolean(feedback)} onSubmit={submit} /> : null}
       {busy ? <ActivityIndicator color={Theme.colors.green} /> : null}
       {error ? <Text style={styles.error}>{error}</Text> : null}
     </ScrollView>
@@ -169,6 +178,7 @@ export function BackendLessonScreen({ lessonId, level }: Props) {
         <MaterialCommunityIcons name={feedback.correct ? 'check-circle' : 'lightbulb-on'} size={30} color={feedback.correct ? Theme.colors.greenDark : Theme.colors.coralDark} />
         <View style={styles.feedbackText}>
           <Text style={[styles.feedbackTitle, { color: feedback.correct ? Theme.colors.greenDark : Theme.colors.coralDark }]}>{feedback.feedback}</Text>
+          {feedback.transcript ? <Text style={styles.feedbackMeta}>Hệ thống nghe: {feedback.transcript}{typeof feedback.matchScore === 'number' ? ` (${feedback.matchScore}%)` : ''}</Text> : null}
           <Text style={styles.feedbackMeta}>+{feedback.xpEarned} XP trong phiên</Text>
         </View>
       </View>
@@ -179,4 +189,10 @@ export function BackendLessonScreen({ lessonId, level }: Props) {
 
 function Meta({ icon, value }: { icon: string; value: string }) {
   return <View style={styles.meta}><MaterialCommunityIcons name={icon as never} size={19} color={Theme.colors.blueDark} /><Text style={styles.metaText}>{value}</Text></View>;
+}
+
+function isRecordingAnswer(value: unknown): value is { recordingUri: string } {
+  return Boolean(value)
+    && typeof value === 'object'
+    && typeof (value as { recordingUri?: unknown }).recordingUri === 'string';
 }
