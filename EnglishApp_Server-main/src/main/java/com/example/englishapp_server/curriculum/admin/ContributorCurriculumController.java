@@ -117,6 +117,7 @@ public class ContributorCurriculumController {
 
     @PostMapping("/versions/{versionId}/validate")
     public ResponseEntity<?> validate(@PathVariable Long versionId) {
+        service.autoHealIndexes(versionId);
         return ok(service.validate(versionId));
     }
 
@@ -127,6 +128,7 @@ public class ContributorCurriculumController {
 
     @PostMapping("/versions/{versionId}/submit-review")
     public ResponseEntity<?> submitReview(@RequestAttribute("userId") String userId, @PathVariable Long versionId) {
+        service.autoHealIndexes(versionId);
         CurriculumTree submitted = service.submitForReview(versionId);
         auditService.record(UUID.fromString(userId), "CURRICULUM_SUBMITTED_FOR_REVIEW", "CURRICULUM_VERSION",
                 submitted.id().toString(), submitted.versionCode());

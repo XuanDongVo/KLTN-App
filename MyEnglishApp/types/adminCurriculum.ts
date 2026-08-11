@@ -12,6 +12,7 @@ export type AdminVersionCard = {
   unitCount: number;
   lessonCount: number;
   activityCount: number;
+  lockedByUserId?: string | null;
 };
 
 export type AdminLevelOverview = {
@@ -60,6 +61,7 @@ export interface AdminCurriculumVersion {
   unitCount: number;
   lessonCount: number;
   activityCount: number;
+  lockedByUserId?: string | null;
 }
 
 export type AdminUnit = {
@@ -82,6 +84,7 @@ export interface AdminCurriculumTree {
   description: string;
   status: 'DRAFT' | 'PENDING' | 'REJECTED' | 'PUBLISHED' | 'ARCHIVED';
   reviewFeedback?: string;
+  lockedByUserId?: string | null;
   units: AdminUnit[];
 };
 

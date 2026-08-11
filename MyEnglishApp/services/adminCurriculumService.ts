@@ -47,6 +47,7 @@ export const createCurriculumService = (prefix: '/api/admin/curriculum' | '/api/
   publish: (versionId: number) => request<AdminCurriculumTree>(`${prefix}/versions/${versionId}/publish`, json('POST')),
   reviewDraft: (versionId: number, approve: boolean, feedback: string = "") => request<AdminCurriculumTree>(`${prefix}/versions/${versionId}/review`, json('POST', { approve, feedback })),
   submitForReview: (versionId: number) => request<AdminCurriculumTree>(`${prefix}/versions/${versionId}/submit-review`, json('POST')),
+  forceUnlock: (versionId: number) => request<string>(`${prefix}/versions/${versionId}/force-unlock`, json('POST')),
   generateImageCaption: (imageUrl: string) => request<{ caption: string; objects: string[]; confidence: number }>(`${prefix}/ai/image-caption`, json('POST', { imageUrl })),
 });
 
