@@ -36,6 +36,7 @@ dependencies {
     implementation(libs.spring.boot.starter.validation)
     implementation(libs.spring.boot.starter.security)
     implementation("org.springframework.boot:spring-boot-starter-flyway")
+    implementation("com.google.genai:google-genai:1.65.0")
     runtimeOnly("org.flywaydb:flyway-mysql")
 //    implementation("org.jspecify:jspecify:1.0.0")
     api(libs.jsoup)
