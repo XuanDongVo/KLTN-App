@@ -16,6 +16,7 @@ type Props = {
   activity: BackendActivity;
   disabled?: boolean;
   onSubmit: (answer: unknown) => void;
+  onSkip?: () => void;
 };
 
 type VocabularyItem = { word: string; meaning: string; example?: string };
@@ -27,7 +28,7 @@ const pairColors = [
   { borderColor: '#38A74A', backgroundColor: '#EEF9F0' },
 ];
 
-export function BackendActivityRenderer({ activity, disabled, onSubmit }: Props) {
+export function BackendActivityRenderer({ activity, disabled, onSubmit, onSkip }: Props) {
   const content = activity.content;
   const [selected, setSelected] = useState<string>();
   const [input, setInput] = useState('');
@@ -107,6 +108,7 @@ export function BackendActivityRenderer({ activity, disabled, onSubmit }: Props)
       phrase={asString(content.modelText) || activity.prompt}
       instruction={activity.instruction}
       onComplete={(recordingUri) => onSubmit({ recordingUri })}
+      onSkip={onSkip ?? (() => {})}
     />;
   }
 

@@ -20,9 +20,10 @@ type Props = {
   phrase: string;
   instruction?: string;
   onComplete: (recordingUri: string) => void;
+  onSkip: () => void;
 };
 
-export function SpeakingActivity({ phrase, instruction, onComplete }: Props) {
+export function SpeakingActivity({ phrase, instruction, onComplete, onSkip }: Props) {
   const recorder = useAudioRecorder({ ...RecordingPresets.HIGH_QUALITY, isMeteringEnabled: true });
   const recorderState = useAudioRecorderState(recorder, 150);
   const player = useAudioPlayer(null);
@@ -105,6 +106,19 @@ export function SpeakingActivity({ phrase, instruction, onComplete }: Props) {
     player.play();
   };
 
+  const handleSkip = async () => { 
+    try { 
+      if (recordingTimer.current){
+        clearTimeout(recordingTimer.current);
+        recordingTimer.current = undefined; } 
+        Speech.stop(); player.pause(); 
+        if (recorderState.isRecording) { await recorder.stop(); } 
+        await setAudioModeAsync({ allowsRecording: false, playsInSilentMode: true, }); 
+      } catch {
+         
+      }
+       finally { onSkip(); } };
+
   const seconds = Math.max(0, Math.round(recorderState.durationMillis / 1000));
 
   return <View style={styles.container}>
@@ -133,6 +147,21 @@ export function SpeakingActivity({ phrase, instruction, onComplete }: Props) {
         <Text style={styles.submitText}>Nộp bài nói</Text>
       </Pressable>
     </View>}
+
+    <Pressable
+      onPress={() => handleSkip()}
+      disabled={busy}
+      style={styles.skipButton}
+      accessibilityRole="button"
+      accessibilityLabel="Bỏ qua bài nói"
+    >
+      <MaterialCommunityIcons
+        name="skip-next"
+        size={21}
+        color={Theme.colors.blueDark}
+      />
+      <Text style={styles.skipText}>Bỏ qua</Text>
+    </Pressable>
     <Text style={styles.note}>Bản ghi chỉ dùng cho hoạt động luyện nói này.</Text>
   </View>;
 }

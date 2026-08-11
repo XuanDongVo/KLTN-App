@@ -150,7 +150,13 @@ export function BackendReviewScreen() {
       <Text style={styles.counter}>HOẠT ĐỘNG {visibleIndex + 1}/{session.activities.length}</Text>
       <Text style={styles.prompt}>{activity?.prompt}</Text>
       {activity?.instruction && activity.type !== 'SPEAK' ? <Text style={styles.instruction}>{activity.instruction}</Text> : null}
-      {activity ? <BackendActivityRenderer key={activity.id} activity={activity} disabled={busy || Boolean(feedback)} onSubmit={submit} /> : null}
+      {activity ? <BackendActivityRenderer
+        key={activity.id}
+        activity={activity}
+        disabled={busy || Boolean(feedback)}
+        onSubmit={submit}
+        onSkip={() => { void submit({ skipped: true }); }}
+      /> : null}
       {busy ? <ActivityIndicator color={Theme.colors.green} /> : null}
       {error ? <Text style={styles.error}>{error}</Text> : null}
     </ScrollView>

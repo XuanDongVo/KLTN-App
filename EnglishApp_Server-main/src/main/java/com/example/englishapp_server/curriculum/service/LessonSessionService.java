@@ -198,12 +198,16 @@ public class LessonSessionService {
             throw new IllegalStateException("Activity has already been attempted in this session");
         }
 
-        if (speakingActivity && forcedCorrect == null) {
-            throw new IllegalArgumentException("Speaking activities must be submitted with audio");
-        }
         Map<String, Object> submitted = request.answer() == null ? Map.of() : request.answer();
+        boolean skipped = speakingActivity && submitted.containsKey("skipped") && Boolean.TRUE.equals(submitted.get("skipped"));
+        if (speakingActivity && forcedCorrect == null && !skipped) {
+            throw new IllegalArgumentException("Speaking activities must be submitted with audio or a skip flag");
+        }
         boolean correct = forcedCorrect != null ? forcedCorrect : evaluate(activity, submitted);
-        boolean retryableSpeakingMistake = speakingActivity && !correct;
+        if (skipped) {
+            correct = false;
+        }
+        boolean retryableSpeakingMistake = speakingActivity && !correct && !skipped;
         int earned = correct ? activity.getXpReward() : 0;
         session.setTotalAttempts(session.getTotalAttempts() + 1);
         session.setCorrectAttempts(session.getCorrectAttempts() + (correct ? 1 : 0));
@@ -211,10 +215,14 @@ public class LessonSessionService {
         if (!retryableSpeakingMistake) {
             session.setCurrentActivityIndex(session.getCurrentActivityIndex() + 1);
         }
-        if (!correct && activity.getActivityStage() == ActivityStage.CHECK) {
+        if (!correct && !skipped && activity.getActivityStage() == ActivityStage.CHECK) {
             session.setHeartsRemaining(Math.max(0, session.getHeartsRemaining() - 1));
             profileService.deductHeart(userId);
         }
+
+        String feedbackMessage = skipped
+                ? "Bạn đã bỏ qua hoạt động này."
+                : (correct ? "Chính xác!" : "Chưa đúng, mình sẽ ôn lại mục này sau nhé.");
 
         if (activity.getId() > 0) {
             attemptRepository.save(ActivityAttempt.builder()
@@ -223,7 +231,7 @@ public class LessonSessionService {
                     .submittedAnswerJson(writeJson(submitted))
                     .correct(correct)
                     .score(correct ? 100 : 0)
-                    .feedback(correct ? "Chính xác!" : "Chưa đúng, mình sẽ ôn lại mục này sau nhé.")
+                    .feedback(feedbackMessage)
                     .attemptedAt(LocalDateTime.now())
                     .build());
         }
@@ -231,7 +239,7 @@ public class LessonSessionService {
 
         boolean canFinish = session.getCurrentActivityIndex() >= activities.size() || session.getHeartsRemaining() == 0;
         return new AttemptResult(correct,
-                correct ? "Chính xác!" : "Chưa đúng, mình sẽ ôn lại mục này sau nhé.",
+                feedbackMessage,
                 session.getHeartsRemaining(), session.getCurrentActivityIndex(), session.getXpEarned(), canFinish,
                 transcript, matchScore);
     }
