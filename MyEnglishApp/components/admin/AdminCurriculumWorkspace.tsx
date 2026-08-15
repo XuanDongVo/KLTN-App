@@ -21,6 +21,7 @@ import { AdminImageField } from '@/components/admin/AdminImageField';
 import { ActionButton } from '@/components/ui/ActionButton';
 import { Theme } from '@/constants/Theme';
 import { adminCurriculumService } from '@/services/adminCurriculumService';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 type UserRole = 'USER' | 'ADMIN' | 'CONTRIBUTOR';
 
 import type {
@@ -64,11 +65,28 @@ export function AdminCurriculumWorkspace({ service = adminCurriculumService, rol
   const [busy, setBusy] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const currentLevel = levels.find((level) => level.code === selectedLevel);
   const selectedVersion = tree
     ? currentLevel?.versions.find((version) => version.id === tree.id)
     : undefined;
-  const editable = tree?.status === 'DRAFT' || tree?.status === 'REJECTED';
+  
+  const isLockedByOther = !!tree?.lockedByUserId && tree.lockedByUserId !== currentUserId;
+  const editable = (tree?.status === 'DRAFT' || tree?.status === 'REJECTED') && !isLockedByOther;
+  
+  const handleForceUnlock = async () => {
+    if (!tree) return;
+    try {
+      setBusy(true);
+      await service.forceUnlock(tree.id);
+      Alert.alert('Thành công', 'Đã mở khóa bản nháp.');
+      await load(selectedLevel, tree.id);
+    } catch (e) {
+      Alert.alert('Lỗi', messageOf(e));
+    } finally {
+      setBusy(false);
+    }
+  };
   const load = async (levelCode = selectedLevel, preferredVersionId?: number) => {
     setLoading(true);
     setError('');
@@ -97,7 +115,10 @@ export function AdminCurriculumWorkspace({ service = adminCurriculumService, rol
       setLoading(false);
     }
   };
-  useEffect(() => { void load('PRE_A1_STARTERS'); }, []);
+  useEffect(() => { 
+    AsyncStorage.getItem('userId').then(id => setCurrentUserId(id));
+    void load('PRE_A1_STARTERS'); 
+  }, []);
   const chooseLevel = async (code: BackendLevelCode) => {
     if (code === selectedLevel) return;
     await load(code);
@@ -279,6 +300,21 @@ export function AdminCurriculumWorkspace({ service = adminCurriculumService, rol
           <Text style={adminStyles.levelMeta}>{draft ? 'Có bản nháp' : published?.versionCode ?? 'Chưa xuất bản'}</Text>
         </Pressable>;
       })}</View>
+      
+      {isLockedByOther && (
+        <View style={{ padding: 12, backgroundColor: Theme.colors.yellow + '33', borderRadius: 8, marginVertical: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+          <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center' }}>
+            <MaterialCommunityIcons name="lock" size={24} color={Theme.colors.yellowDark} style={{ marginRight: 8 }} />
+            <Text style={{ color: Theme.colors.ink, fontWeight: '500', flexShrink: 1 }}>Bản nháp này đang được khóa bởi người khác, bạn chỉ có quyền Xem.</Text>
+          </View>
+          {role === 'ADMIN' && (
+            <Pressable style={{ backgroundColor: Theme.colors.yellowDark, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 6, marginLeft: 12 }} onPress={handleForceUnlock}>
+              <Text style={{ color: 'white', fontWeight: 'bold' }}>Mở khóa ép buộc</Text>
+            </Pressable>
+          )}
+        </View>
+      )}
+
       {error ? <View style={adminStyles.errorBand}><MaterialCommunityIcons name="alert-circle" size={22} color={Theme.colors.coralDark} /><Text style={adminStyles.errorText}>{error}</Text><Pressable accessibilityLabel="Đóng lỗi" onPress={() => setError('')} style={adminStyles.iconTouch}><MaterialCommunityIcons name="close" size={21} color={Theme.colors.coralDark} /></Pressable></View> : null}
       {loading ? <View style={adminStyles.loading}><ActivityIndicator size="large" color={Theme.colors.green} /></View> : <>
         <View style={adminStyles.versionBar}>

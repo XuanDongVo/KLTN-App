@@ -46,4 +46,7 @@ public class CurriculumVersion {
 
     @Column(name = "imported_at", nullable = false)
     private LocalDateTime importedAt;
+
+    @Column(name = "locked_by_user_id")
+    private java.util.UUID lockedByUserId;
 }
