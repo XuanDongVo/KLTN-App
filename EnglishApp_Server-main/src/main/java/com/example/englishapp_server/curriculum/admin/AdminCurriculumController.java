@@ -117,7 +117,14 @@ public class AdminCurriculumController {
 
     @PostMapping("/versions/{versionId}/validate")
     public ResponseEntity<?> validate(@PathVariable Long versionId) {
+        service.autoHealIndexes(versionId);
         return ok(service.validate(versionId));
+    }
+
+    @PostMapping("/versions/{versionId}/submit")
+    public ResponseEntity<?> submitForReview(@PathVariable Long versionId) {
+        service.autoHealIndexes(versionId);
+        return ok(service.submitForReview(versionId));
     }
 
     @GetMapping("/versions/{versionId}/preview")
@@ -144,6 +151,12 @@ public class AdminCurriculumController {
     @GetMapping("/versions/{versionId}/delete-check")
     public ResponseEntity<?> checkDelete(@PathVariable Long versionId) {
         return ok(service.checkVersionDelete(versionId));
+    }
+
+    @PostMapping("/versions/{versionId}/force-unlock")
+    public ResponseEntity<?> forceUnlock(@PathVariable Long versionId) {
+        service.forceUnlock(versionId);
+        return ok("Mở khóa thành công");
     }
 
     @DeleteMapping("/versions/{versionId}")

@@ -115,6 +115,7 @@ public class AdminCurriculumService {
                 .checksum(sha256("draft:" + versionCode))
                 .sourceManifestJson(ensureAdminSource(published.getSourceManifestJson()))
                 .importedAt(LocalDateTime.now())
+                .lockedByUserId(getCurrentUserId())
                 .build());
 
         cloneUnits(published, draft);
@@ -145,6 +146,7 @@ public class AdminCurriculumService {
                 .build();
         applyUnit(unit, request);
         unitRepository.save(unit);
+        reindexUnits(versionId);
         return tree(version);
     }
 
@@ -166,6 +168,7 @@ public class AdminCurriculumService {
         unit.setIsDeleted(true);
         unit.setDeletedAt(LocalDateTime.now());
         unitRepository.save(unit);
+        reindexUnits(version.getId());
         
         return tree(version);
     }
@@ -178,6 +181,7 @@ public class AdminCurriculumService {
         unit.setIsDeleted(false);
         unit.setDeletedAt(null);
         unitRepository.save(unit);
+        reindexUnits(version.getId());
         
         return tree(version);
     }
@@ -185,7 +189,8 @@ public class AdminCurriculumService {
     @Transactional
     public CurriculumTree reorderUnits(Long versionId, ReorderRequest request) {
         CurriculumVersion version = requireDraft(versionId);
-        List<LearningUnit> units = unitRepository.findByCurriculumVersionIdOrderByOrderIndex(versionId);
+        List<LearningUnit> units = unitRepository.findByCurriculumVersionIdOrderByOrderIndex(versionId)
+                .stream().filter(u -> !u.getIsDeleted()).toList();
         requireSameIds(units.stream().map(LearningUnit::getId).toList(), request.orderedIds(), "unit");
         Map<Long, LearningUnit> byId = new HashMap<>();
         units.forEach(unit -> byId.put(unit.getId(), unit));
@@ -205,6 +210,7 @@ public class AdminCurriculumService {
         Lesson lesson = Lesson.builder().learningUnit(unit).orderIndex(order).build();
         applyLesson(lesson, request);
         lessonRepository.save(lesson);
+        reindexLessons(unitId);
         return tree(version);
     }
 
@@ -227,6 +233,7 @@ public class AdminCurriculumService {
         lesson.setIsDeleted(true);
         lesson.setDeletedAt(LocalDateTime.now());
         lessonRepository.save(lesson);
+        reindexLessons(unit.getId());
         
         return tree(version);
     }
@@ -240,6 +247,7 @@ public class AdminCurriculumService {
         lesson.setIsDeleted(false);
         lesson.setDeletedAt(null);
         lessonRepository.save(lesson);
+        reindexLessons(unit.getId());
         
         return tree(version);
     }
@@ -248,7 +256,8 @@ public class AdminCurriculumService {
     public CurriculumTree reorderLessons(Long unitId, ReorderRequest request) {
         LearningUnit unit = requireUnit(unitId);
         CurriculumVersion version = requireDraft(unit.getCurriculumVersion().getId());
-        List<Lesson> lessons = lessonRepository.findByLearningUnitIdOrderByOrderIndex(unitId);
+        List<Lesson> lessons = lessonRepository.findByLearningUnitIdOrderByOrderIndex(unitId)
+                .stream().filter(l -> !l.getIsDeleted()).toList();
         requireSameIds(lessons.stream().map(Lesson::getId).toList(), request.orderedIds(), "lesson");
         Map<Long, Lesson> byId = new HashMap<>();
         lessons.forEach(lesson -> byId.put(lesson.getId(), lesson));
@@ -268,6 +277,7 @@ public class AdminCurriculumService {
         LearningActivity activity = LearningActivity.builder().lesson(lesson).orderIndex(order).build();
         applyActivity(activity, request);
         activityRepository.save(activity);
+        reindexActivities(lessonId);
         return tree(version);
     }
 
@@ -290,6 +300,7 @@ public class AdminCurriculumService {
         activity.setIsDeleted(true);
         activity.setDeletedAt(LocalDateTime.now());
         activityRepository.save(activity);
+        reindexActivities(lesson.getId());
         
         return tree(version);
     }
@@ -303,6 +314,7 @@ public class AdminCurriculumService {
         activity.setIsDeleted(false);
         activity.setDeletedAt(null);
         activityRepository.save(activity);
+        reindexActivities(lesson.getId());
         
         return tree(version);
     }
@@ -311,7 +323,8 @@ public class AdminCurriculumService {
     public CurriculumTree reorderActivities(Long lessonId, ReorderRequest request) {
         Lesson lesson = requireLesson(lessonId);
         CurriculumVersion version = requireDraft(lesson.getLearningUnit().getCurriculumVersion().getId());
-        List<LearningActivity> activities = activityRepository.findByLessonIdOrderByOrderIndex(lessonId);
+        List<LearningActivity> activities = activityRepository.findByLessonIdOrderByOrderIndex(lessonId)
+                .stream().filter(a -> !a.getIsDeleted()).toList();
         requireSameIds(activities.stream().map(LearningActivity::getId).toList(), request.orderedIds(), "activity");
         Map<Long, LearningActivity> byId = new HashMap<>();
         activities.forEach(activity -> byId.put(activity.getId(), activity));
@@ -322,6 +335,17 @@ public class AdminCurriculumService {
         return tree(version);
     }
 
+    @Transactional
+    public void autoHealIndexes(Long versionId) {
+        reindexUnits(versionId);
+        for (LearningUnit u : unitRepository.findByCurriculumVersionIdOrderByOrderIndex(versionId)) {
+            reindexLessons(u.getId());
+            for (Lesson l : lessonRepository.findByLearningUnitIdOrderByOrderIndex(u.getId())) {
+                reindexActivities(l.getId());
+            }
+        }
+    }
+
     @Transactional(readOnly = true)
     public ValidationReport validate(Long versionId) {
         CurriculumVersion version = requireVersion(versionId);
@@ -329,7 +353,7 @@ public class AdminCurriculumService {
         if (!version.getVersionCode().matches(VERSION_CODE_PATTERN) || version.getVersionCode().toUpperCase().contains("DRAFT")) {
             issues.add(issue("version.versionCode", "Hãy đổi mã bản nháp thành mã phát hành, ví dụ STARTERS_2026.6"));
         }
-        List<LearningUnit> units = unitRepository.findByCurriculumVersionIdOrderByOrderIndex(versionId);
+        List<LearningUnit> units = unitRepository.findByCurriculumVersionIdOrderByOrderIndex(versionId).stream().filter(u -> !u.getIsDeleted()).toList();
         if (units.isEmpty()) issues.add(issue("version", "Chương trình phải có ít nhất một unit"));
         validateOrder(units.stream().map(LearningUnit::getOrderIndex).toList(), "units", issues);
 
@@ -337,7 +361,7 @@ public class AdminCurriculumService {
             String unitPath = "unit[" + unit.getCode() + "]";
             validateStoredCode(unit.getCode(), unitPath, "unit", issues);
             validateMedia(unit.getCoverImagePath(), unit.getCoverImageWidth(), unit.getCoverImageHeight(), unit.getCoverImageAlt(), unitPath, issues);
-            List<Lesson> lessons = lessonRepository.findByLearningUnitIdOrderByOrderIndex(unit.getId());
+            List<Lesson> lessons = lessonRepository.findByLearningUnitIdOrderByOrderIndex(unit.getId()).stream().filter(l -> !l.getIsDeleted()).toList();
             if (lessons.isEmpty()) issues.add(issue(unitPath, "Unit phải có ít nhất một lesson"));
             validateOrder(lessons.stream().map(Lesson::getOrderIndex).toList(), unitPath + ".lessons", issues);
 
@@ -345,7 +369,7 @@ public class AdminCurriculumService {
                 String lessonPath = unitPath + ".lesson[" + lesson.getCode() + "]";
                 validateStoredCode(lesson.getCode(), lessonPath, "lesson", issues);
                 validateMedia(lesson.getCoverImagePath(), lesson.getCoverImageWidth(), lesson.getCoverImageHeight(), lesson.getCoverImageAlt(), lessonPath, issues);
-                List<LearningActivity> activities = activityRepository.findByLessonIdOrderByOrderIndex(lesson.getId());
+                List<LearningActivity> activities = activityRepository.findByLessonIdOrderByOrderIndex(lesson.getId()).stream().filter(a -> !a.getIsDeleted()).toList();
                 if (activities.size() < 1) {
                     issues.add(issue(lessonPath, "Lesson phải có ít nhất một hoạt động; hiện có " + activities.size()));
                 }
@@ -617,7 +641,7 @@ public class AdminCurriculumService {
             for (Lesson lesson : lessons) activityCount += activityRepository.countByLessonId(lesson.getId());
         }
         return new VersionCard(version.getId(), version.getVersionCode(), version.getTitle(), version.getDescription(),
-                version.getLifecycleStatus(), version.getReviewFeedback(), units.size(), lessonCount, activityCount);
+                version.getLifecycleStatus(), version.getReviewFeedback(), units.size(), lessonCount, activityCount, version.getLockedByUserId());
     }
 
     private CurriculumTree tree(CurriculumVersion version) {
@@ -639,7 +663,7 @@ public class AdminCurriculumService {
                                 .toList()))
                 .toList();
         return new CurriculumTree(version.getId(), version.getLevelCode(), version.getVersionCode(), version.getTitle(),
-                version.getDescription(), version.getLifecycleStatus(), version.getReviewFeedback(), units);
+                version.getDescription(), version.getLifecycleStatus(), version.getReviewFeedback(), version.getLockedByUserId(), units);
     }
 
     private void applyUnit(LearningUnit unit, UnitRequest request) {
@@ -747,19 +771,31 @@ public class AdminCurriculumService {
 
     private void reindexUnits(Long versionId) {
         List<LearningUnit> units = unitRepository.findByCurriculumVersionIdOrderByOrderIndex(versionId);
-        for (int index = 0; index < units.size(); index++) units.get(index).setOrderIndex(index + 1);
+        int index = 1;
+        for (LearningUnit unit : units) {
+            if (!unit.getIsDeleted()) unit.setOrderIndex(index++);
+            else unit.setOrderIndex(99999);
+        }
         unitRepository.saveAll(units);
     }
 
     private void reindexLessons(Long unitId) {
         List<Lesson> lessons = lessonRepository.findByLearningUnitIdOrderByOrderIndex(unitId);
-        for (int index = 0; index < lessons.size(); index++) lessons.get(index).setOrderIndex(index + 1);
+        int index = 1;
+        for (Lesson lesson : lessons) {
+            if (!lesson.getIsDeleted()) lesson.setOrderIndex(index++);
+            else lesson.setOrderIndex(99999);
+        }
         lessonRepository.saveAll(lessons);
     }
 
     private void reindexActivities(Long lessonId) {
         List<LearningActivity> activities = activityRepository.findByLessonIdOrderByOrderIndex(lessonId);
-        for (int index = 0; index < activities.size(); index++) activities.get(index).setOrderIndex(index + 1);
+        int index = 1;
+        for (LearningActivity activity : activities) {
+            if (!activity.getIsDeleted()) activity.setOrderIndex(index++);
+            else activity.setOrderIndex(99999);
+        }
         activityRepository.saveAll(activities);
     }
 
@@ -772,7 +808,37 @@ public class AdminCurriculumService {
         if (version.getLifecycleStatus() != LifecycleStatus.DRAFT && version.getLifecycleStatus() != LifecycleStatus.REJECTED) {
             throw new IllegalStateException("Chỉ có thể sửa bản nháp");
         }
+        
+        java.util.UUID currentUserId = getCurrentUserId();
+        if (currentUserId != null && version.getLockedByUserId() != null && !version.getLockedByUserId().equals(currentUserId)) {
+            throw new IllegalStateException("Bản nháp này đang được khóa bởi người khác, bạn không thể chỉnh sửa.");
+        }
+        
         return version;
+    }
+
+    private java.util.UUID getCurrentUserId() {
+        org.springframework.security.core.Authentication auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null && auth.getPrincipal() instanceof String userIdStr && !userIdStr.equals("anonymousUser")) {
+            try {
+                return java.util.UUID.fromString(userIdStr);
+            } catch (Exception ignored) {}
+        }
+        return null;
+    }
+
+    public void checkLock(Long versionId, java.util.UUID userId) {
+        CurriculumVersion version = requireVersion(versionId);
+        if (version.getLockedByUserId() != null && !version.getLockedByUserId().equals(userId)) {
+            throw new IllegalStateException("Bản nháp này đang được khóa bởi người khác, bạn không thể chỉnh sửa.");
+        }
+    }
+
+    @Transactional
+    public void forceUnlock(Long versionId) {
+        CurriculumVersion version = requireDraft(versionId);
+        version.setLockedByUserId(null);
+        versionRepository.save(version);
     }
 
     private LearningUnit requireUnit(Long id) {

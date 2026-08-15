@@ -20,7 +20,8 @@ public final class AdminCurriculumModels {
             String reviewFeedback,
             int unitCount,
             int lessonCount,
-            int activityCount
+            int activityCount,
+            java.util.UUID lockedByUserId
     ) {}
 
     public record CurriculumTree(
@@ -31,6 +32,7 @@ public final class AdminCurriculumModels {
             String description,
             LifecycleStatus status,
             String reviewFeedback,
+            java.util.UUID lockedByUserId,
             List<UnitView> units
     ) {}
 
