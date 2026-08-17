@@ -45,6 +45,14 @@ public class NotificationController {
         return ok(null);
     }
 
+    public record PushTokenRequest(String expoPushToken) {}
+
+    @PostMapping("/push-token")
+    public ResponseEntity<?> updatePushToken(@RequestAttribute("userId") String userId, @RequestBody PushTokenRequest request) {
+        notificationService.updatePushTokenAndSync(UUID.fromString(userId), request.expoPushToken());
+        return ok("Push token updated and notifications synced");
+    }
+
     private ResponseEntity<?> ok(Object data) {
         return ResponseEntity.ok(ServerResponse.success(data));
     }
