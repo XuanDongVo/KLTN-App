@@ -112,6 +112,15 @@ public class LearnerCurriculumController {
                 sessionService.submitAttempt(UUID.fromString(userId), sessionId, request)));
     }
 
+    @PostMapping(path = "/sessions/{sessionId}/speaking-attempts", consumes = "multipart/form-data")
+    public ResponseEntity<?> speakingAttempt(@RequestAttribute("userId") String userId,
+                                             @PathVariable UUID sessionId,
+                                             @RequestParam Long activityId,
+                                             @RequestPart("audio") MultipartFile audio) {
+        return ResponseEntity.ok(ServerResponse.success(
+                sessionService.submitSpeakingAttempt(UUID.fromString(userId), sessionId, activityId, audio)));
+    }
+
     @PostMapping("/sessions/{sessionId}/finish")
     public ResponseEntity<?> finish(@RequestAttribute("userId") String userId, @PathVariable UUID sessionId) {
         return ResponseEntity.ok(ServerResponse.success(sessionService.finish(UUID.fromString(userId), sessionId)));

@@ -15,4 +15,6 @@ export const styles = StyleSheet.create({
   submitButton: { flex: 1.4, minHeight: 54, borderRadius: 8, backgroundColor: Theme.colors.green, borderBottomWidth: 4, borderBottomColor: Theme.colors.greenDark, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7 },
   submitText: { color: '#FFFFFF', fontWeight: '900' },
   note: { color: Theme.colors.muted, fontSize: 11, lineHeight: 16, textAlign: 'center' },
+  skipButton: {marginTop: 12, minHeight: 44, paddingHorizontal: 20, paddingVertical: 10, flexDirection: 'row', alignItems: 'center', justifyContent: 'center' ,gap: 6},
+  skipText: {color: Theme.colors.blueDark, fontSize: 15, fontWeight: '600',},
 });

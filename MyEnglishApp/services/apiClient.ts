@@ -12,14 +12,16 @@ export async function request<T>(path: string, init?: RequestInit): Promise<T> {
   if (!token) throw new Error('Phiên đăng nhập đã hết hạn.');
 
   let response: Response;
+  const isFormData = typeof FormData !== 'undefined' && init?.body instanceof FormData;
+  const headers = (accessToken: string) => ({
+    ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
+    Authorization: `Bearer ${accessToken}`,
+    ...(init?.headers ?? {}),
+  });
   try {
     response = await fetch(`${API_URL}${path}`, {
       ...init,
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
-        ...(init?.headers ?? {}),
-      },
+      headers: headers(token),
     });
     
     if (response.status === 401 || response.status === 403) {
@@ -34,11 +36,7 @@ export async function request<T>(path: string, init?: RequestInit): Promise<T> {
           }
           response = await fetch(`${API_URL}${path}`, {
             ...init,
-            headers: {
-              'Content-Type': 'application/json',
-              Authorization: `Bearer ${token}`,
-              ...(init?.headers ?? {}),
-            },
+            headers: headers(token),
           });
         } catch (refreshErr) {
           await AsyncStorage.multiRemove(['userId', 'userToken', 'userRole', 'userEmail', 'refreshToken']);

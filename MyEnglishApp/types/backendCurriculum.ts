@@ -92,6 +92,8 @@ export type BackendAttemptResult = {
   currentActivityIndex: number;
   xpEarned: number;
   canFinish: boolean;
+  transcript?: string;
+  matchScore?: number;
 };
 
 export type BackendFinishResult = {

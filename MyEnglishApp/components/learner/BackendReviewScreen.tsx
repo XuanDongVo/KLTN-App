@@ -39,7 +39,10 @@ export function BackendReviewScreen() {
     setBusy(true);
     setError('');
     try {
-      setFeedback(await curriculumService.submitAttempt(session.id, activity.id, answer));
+      const recordingUri = activity.type === 'SPEAK' && isRecordingAnswer(answer) ? answer.recordingUri : undefined;
+      setFeedback(recordingUri
+        ? await curriculumService.submitSpeakingAttempt(session.id, activity.id, recordingUri)
+        : await curriculumService.submitAttempt(session.id, activity.id, answer));
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : 'Không thể nộp câu trả lời.');
     } finally {
@@ -147,7 +150,13 @@ export function BackendReviewScreen() {
       <Text style={styles.counter}>HOẠT ĐỘNG {visibleIndex + 1}/{session.activities.length}</Text>
       <Text style={styles.prompt}>{activity?.prompt}</Text>
       {activity?.instruction && activity.type !== 'SPEAK' ? <Text style={styles.instruction}>{activity.instruction}</Text> : null}
-      {activity ? <BackendActivityRenderer key={activity.id} activity={activity} disabled={busy || Boolean(feedback)} onSubmit={submit} /> : null}
+      {activity ? <BackendActivityRenderer
+        key={activity.id}
+        activity={activity}
+        disabled={busy || Boolean(feedback)}
+        onSubmit={submit}
+        onSkip={() => { void submit({ skipped: true }); }}
+      /> : null}
       {busy ? <ActivityIndicator color={Theme.colors.green} /> : null}
       {error ? <Text style={styles.error}>{error}</Text> : null}
     </ScrollView>
@@ -156,6 +165,7 @@ export function BackendReviewScreen() {
         <MaterialCommunityIcons name={feedback.correct ? 'check-circle' : 'lightbulb-on'} size={30} color={feedback.correct ? Theme.colors.greenDark : Theme.colors.coralDark} />
         <View style={styles.feedbackText}>
           <Text style={[styles.feedbackTitle, { color: feedback.correct ? Theme.colors.greenDark : Theme.colors.coralDark }]}>{feedback.feedback}</Text>
+          {feedback.transcript ? <Text style={styles.feedbackMeta}>Hệ thống nghe: {feedback.transcript}{typeof feedback.matchScore === 'number' ? ` (${feedback.matchScore}%)` : ''}</Text> : null}
           <Text style={styles.feedbackMeta}>+{feedback.xpEarned} XP trong phiên</Text>
         </View>
       </View>
@@ -166,4 +176,10 @@ export function BackendReviewScreen() {
 
 function Meta({ icon, value }: { icon: string; value: string }) {
   return <View style={styles.meta}><MaterialCommunityIcons name={icon as never} size={19} color={Theme.colors.blueDark} /><Text style={styles.metaText}>{value}</Text></View>;
+}
+
+function isRecordingAnswer(value: unknown): value is { recordingUri: string } {
+  return Boolean(value)
+    && typeof value === 'object'
+    && typeof (value as { recordingUri?: unknown }).recordingUri === 'string';
 }

@@ -79,7 +79,9 @@ public final class LearnerApiModels {
             int heartsRemaining,
             int currentActivityIndex,
             int xpEarned,
-            boolean canFinish
+            boolean canFinish,
+            String transcript,
+            Integer matchScore
     ) {}
 
     public record FinishResult(

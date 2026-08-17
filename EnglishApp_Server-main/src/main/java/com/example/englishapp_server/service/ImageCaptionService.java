@@ -4,14 +4,10 @@ import com.example.englishapp_server.dto.response.learner.ImageCaptionResponse;
 import com.example.englishapp_server.document.PhotoMissionLog;
 import com.example.englishapp_server.repository.mongo.PhotoMissionLogRepository;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.MediaType;
-import org.springframework.http.client.MultipartBodyBuilder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
-import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 import java.time.LocalDateTime;
 
