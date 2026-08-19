@@ -24,7 +24,7 @@ public class ExpoPushNotificationService {
     }
 
     public void sendPushNotification(String toToken, String title, String body, Map<String, Object> data) {
-        if (toToken == null || toToken.isBlank() || !toToken.startsWith("ExponentPushToken[")) {
+        if (toToken == null || toToken.isBlank() || !(toToken.startsWith("ExponentPushToken[") || toToken.startsWith("ExpoPushToken["))) {
             logger.warn("Invalid Expo Push Token: {}", toToken);
             return;
         }

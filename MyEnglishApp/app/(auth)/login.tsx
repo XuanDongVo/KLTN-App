@@ -36,7 +36,20 @@ export default function LoginScreen() {
         ['userEmail', email.trim()],
         ['isVerified', String(response.data.verified)],
       ]);
-      
+      // Send push token to backend immediately to trigger push sync demo
+      try {
+        const Constants = (await import('expo-constants')).default;
+        const Notifications = await import('expo-notifications');
+        const projectId = Constants.expoConfig?.extra?.eas?.projectId;
+        const pushToken = await Notifications.getExpoPushTokenAsync({ projectId });
+        if (pushToken && pushToken.data) {
+          const notificationService = await import('@/services/notificationService');
+          await notificationService.sendPushTokenApi(pushToken.data);
+        }
+      } catch (e) {
+        // Ignore push token error on login
+      }
+
       if (response.data.role === 'ADMIN') {
         router.replace('/admin');
       } else if (response.data.role === 'CONTRIBUTOR') {
