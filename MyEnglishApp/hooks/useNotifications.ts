@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
+import { DeviceEventEmitter } from 'react-native';
 import { request } from '@/services/apiClient';
 
 export interface Notification {
@@ -56,6 +57,7 @@ export function useNotifications() {
       await request<void>(`/api/notifications/${id}/read`, { method: 'PUT' });
       setNotifications(prev => prev.map(n => n.id === id ? { ...n, isRead: true } : n));
       setUnreadCount(prev => Math.max(0, prev - 1));
+      DeviceEventEmitter.emit('notificationRead');
     } catch (e) {
       console.log('Error marking as read', e);
     }
@@ -66,6 +68,7 @@ export function useNotifications() {
       await request<void>('/api/notifications/read-all', { method: 'PUT' });
       setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
       setUnreadCount(0);
+      DeviceEventEmitter.emit('notificationRead');
     } catch (e) {
       console.log('Error marking all as read', e);
     }
@@ -73,6 +76,14 @@ export function useNotifications() {
 
   useEffect(() => {
     fetchUnreadCount();
+    
+    const subscription = DeviceEventEmitter.addListener('notificationRead', () => {
+      fetchUnreadCount();
+    });
+
+    return () => {
+      subscription.remove();
+    };
   }, [fetchUnreadCount]);
 
   return {

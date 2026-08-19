@@ -136,10 +136,4 @@ public class LearnerCurriculumController {
     public ResponseEntity<?> startReviewSession(@RequestAttribute("userId") String userId) {
         return ResponseEntity.ok(ServerResponse.success(reviewSessionService.startReview(UUID.fromString(userId))));
     }
-
-    @PostMapping("/learner/profile/push-token")
-    public ResponseEntity<?> updatePushToken(@RequestAttribute("userId") String userId, @RequestBody LearnerApiModels.PushTokenRequest request) {
-        profileService.updatePushToken(UUID.fromString(userId), request.expoPushToken());
-        return ResponseEntity.ok(ServerResponse.success("Push token updated successfully"));
-    }
 }

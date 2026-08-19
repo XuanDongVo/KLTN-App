@@ -111,7 +111,13 @@ public class AuthService {
     @Transactional
     public AuthResponse logout(RefreshTokenRequest request) {
         Optional<RefreshToken> tokenOpt = refreshTokenRepository.findByToken(request.getRefreshToken());
-        tokenOpt.ifPresent(refreshTokenRepository::delete);
+        tokenOpt.ifPresent(token -> {
+            userRepository.findById(token.getUserId()).ifPresent(user -> {
+                user.setExpoPushToken(null);
+                userRepository.save(user);
+            });
+            refreshTokenRepository.delete(token);
+        });
         return new AuthResponse(true, "Logout success", null);
     }
 
@@ -119,6 +125,8 @@ public class AuthService {
     public AuthResponse logoutAll(String email) {
         User user = userRepository.findByEmail(email);
         if (user != null) {
+            user.setExpoPushToken(null);
+            userRepository.save(user);
             refreshTokenRepository.deleteByUserId(user.getId());
             return new AuthResponse(true, "Logged out from all devices", null);
         }
